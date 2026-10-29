@@ -1,5 +1,6 @@
-// The draft is one plain object. Functions here return new objects rather
-// than changing the one passed in, so the page can re-render from state.
+// The draft is one plain object. The functions here that add or remove items
+// return a new draft rather than changing the one passed in; the page
+// (src/app.js) writes typed text and simple flags directly into the draft.
 
 export const SCHEMA_VERSION = 1;
 export const DESTINATIONS = ['ucoProject/UCO', 'casework/CASE'];
@@ -24,6 +25,8 @@ export function createDraft() {
     allowTranscription: false,
     related: [],
     destination: DESTINATIONS[0],
+    // True once the submitter picks a destination, so it stops following the suggestion.
+    destinationChosen: false,
   };
 }
 
@@ -67,10 +70,21 @@ const isBoolean = v => typeof v === 'boolean';
 const isList = check => v => Array.isArray(v) && v.every(check);
 const isObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-const isRequirement = v => isObject(v) && isString(v.id) && isString(v.text);
-const isQuestion = v => isObject(v) && isString(v.id) && isString(v.question) && isString(v.result);
-const isCompetency = v => isObject(v) && isString(v.id) && isString(v.scenario) && isList(isQuestion)(v.questions);
-const isRelated = v => isObject(v) && isString(v.iri) && isString(v.compactIri) && isString(v.tier) && isString(v.group);
+const optional = check => v => v === undefined || v === null || check(v);
+// Ids come from newId(); anything else in a loaded file is rejected, because
+// the page puts ids into element ids and selectors.
+const isId = v => isString(v) && /^[a-z0-9]{1,16}$/.test(v);
+// Text that goes inside a Markdown code span must not be able to close it.
+const isCodeSafe = v => isString(v) && !/[`\r\n]/.test(v);
+
+const isRequirement = v => isObject(v) && isId(v.id) && isString(v.text);
+const isQuestion = v => isObject(v) && isId(v.id) && isString(v.question) && isString(v.result);
+const isCompetency = v => isObject(v) && isId(v.id) && isString(v.scenario) && isList(isQuestion)(v.questions);
+const isRelated = v => isObject(v)
+  && isString(v.iri) && isCodeSafe(v.compactIri) && isString(v.tier) && isString(v.group)
+  && optional(isString)(v.label) && optional(isString)(v.type)
+  && optional(r => DESTINATIONS.includes(r))(v.repo)
+  && optional(isList(isCodeSafe))(v.mapsTo);
 const isBackground = v => isObject(v) && ['need', 'audience', 'importance', 'details'].every(k => v[k] === undefined || isString(v[k]));
 
 const FIELD_CHECKS = {
@@ -86,7 +100,14 @@ const FIELD_CHECKS = {
   allowTranscription: isBoolean,
   related: isList(isRelated),
   destination: v => DESTINATIONS.includes(v),
+  destinationChosen: isBoolean,
 };
+
+/** A related concept rebuilt from the known fields only. */
+const RELATED_FIELDS = ['iri', 'compactIri', 'label', 'group', 'tier', 'type', 'repo', 'mapsTo'];
+function cleanRelated(concept) {
+  return Object.fromEntries(RELATED_FIELDS.filter(k => concept[k] !== undefined).map(k => [k, concept[k]]));
+}
 
 /**
  * Parse a saved draft. Returns { ok: true, draft } or { ok: false, error }.
@@ -112,7 +133,9 @@ export function parseDraft(text) {
   for (const [field, check] of Object.entries(FIELD_CHECKS)) {
     if (data[field] === undefined) continue;
     if (!check(data[field])) bad.push(field);
-    else draft[field] = field === 'background' ? { ...draft.background, ...data.background } : data[field];
+    else if (field === 'background') draft.background = { ...draft.background, ...data.background };
+    else if (field === 'related') draft.related = data.related.map(cleanRelated);
+    else draft[field] = data[field];
   }
   if (bad.length > 0) {
     return { ok: false, error: `These fields could not be read: ${bad.join(', ')}.` };

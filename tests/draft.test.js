@@ -99,3 +99,40 @@ test('keywords are saved with the draft and must be text', () => {
   assert.equal(bad.ok, false);
   assert.match(bad.error, /keywords/);
 });
+
+test('related concepts with malformed optional fields are rejected', () => {
+  const base = fullDraft();
+  const withRelated = r => parseDraft(JSON.stringify({ ...base, related: [{ ...base.related[0], ...r }] }));
+  assert.equal(withRelated({ mapsTo: 'uco-core:UcoObject' }).ok, false);
+  assert.equal(withRelated({ mapsTo: [1] }).ok, false);
+  assert.equal(withRelated({ label: 5 }).ok, false);
+  assert.equal(withRelated({ repo: 'someone/else' }).ok, false);
+  assert.equal(withRelated({ mapsTo: ['uco-core:UcoObject'], label: null, repo: 'ucoProject/UCO' }).ok, true);
+});
+
+test('backticks or line breaks in a related IRI are rejected, so they cannot break the Markdown', () => {
+  const base = fullDraft();
+  const withRelated = r => parseDraft(JSON.stringify({ ...base, related: [{ ...base.related[0], ...r }] }));
+  assert.equal(withRelated({ compactIri: 'a` ![x](https://e.example/p.png) `' }).ok, false);
+  assert.equal(withRelated({ compactIri: 'a\nb' }).ok, false);
+  assert.equal(withRelated({ mapsTo: ['x`y'] }).ok, false);
+});
+
+test('unknown fields on a related concept are dropped when loading', () => {
+  const base = fullDraft();
+  const result = parseDraft(JSON.stringify({ ...base, related: [{ ...base.related[0], extra: 'x' }] }));
+  assert.equal(result.ok, true);
+  assert.equal(result.draft.related[0].extra, undefined);
+});
+
+test('item ids must be short lower-case letters and digits', () => {
+  const base = fullDraft();
+  const bad = parseDraft(JSON.stringify({ ...base, requirements: [{ id: 'a"b', text: 'x' }] }));
+  assert.equal(bad.ok, false);
+});
+
+test('the manual destination choice is saved with the draft', () => {
+  const draft = { ...fullDraft(), destinationChosen: true };
+  assert.equal(parseDraft(serialiseDraft(draft)).draft.destinationChosen, true);
+  assert.equal(createDraft().destinationChosen, false);
+});

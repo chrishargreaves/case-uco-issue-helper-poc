@@ -46,3 +46,7 @@ test('quote marks typed around a keyword are removed', () => {
   assert.deepEqual(parseKeywords('"flight path", UAV'), ['flight path', 'UAV']);
   assert.deepEqual(issueSearchTerms({ title: '', keywords: '"flight path"' }), [{ term: 'flight path', exact: true }]);
 });
+
+test('the search text drops a lone quote mark in the title, so keywords are still searched', () => {
+  assert.equal(searchText({ title: 'Represent 12" floppy disks', keywords: 'diskette' }), 'Represent 12 floppy disks diskette');
+});

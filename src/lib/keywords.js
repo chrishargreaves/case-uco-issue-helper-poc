@@ -25,7 +25,11 @@ export function parseKeywords(text) {
  */
 export function searchText(draft) {
   const keywords = parseKeywords(draft.keywords).map(k => (/\s/.test(k) ? `"${k}" ${k.replace(/\s+/g, '').toLowerCase()}` : k));
-  return [draft.title.trim(), ...keywords].filter(Boolean).join(' ');
+  // A lone quote mark in the title (12" floppy disks) would otherwise turn
+  // everything after it into one phrase.
+  const title = draft.title.trim();
+  const unbalanced = (title.match(/"/g) || []).length % 2 === 1;
+  return [unbalanced ? title.replace(/"/g, '') : title, ...keywords].filter(Boolean).join(' ');
 }
 
 /**

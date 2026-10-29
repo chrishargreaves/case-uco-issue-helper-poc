@@ -3,8 +3,10 @@
 // query is split into words so that "drone flight log" finds DroneFlightLog.
 // A quoted phrase such as "flight path" is kept together: it matches its words
 // joined in a name (FlightPath), or the phrase in a label or comment, but not
-// either word alone. Entries are ranked by how many terms they match, then by
-// how rare the matched words are across the index.
+// either word alone. A term of four or more letters can also match part of a
+// name, so a half-typed word finds results; shorter terms match whole words
+// only, so "ip" does not match "relationship". Entries are ranked by how many
+// terms they match, then by how rare the matched words are across the index.
 
 export const STOP_WORDS = new Set([
   'a', 'an', 'and', 'the', 'of', 'for', 'to', 'in', 'on', 'or', 'with', 'is', 'by', 'from',
@@ -30,7 +32,8 @@ function words(text) {
 
 /**
  * The search terms in a query: single words (without stop words) and quoted
- * phrases. An unclosed quote runs to the end of the query. A word that is a
+ * phrases. An unclosed quote is ignored. A phrase made only of stop words is
+ * ignored too, because it would match almost every description. A word that is a
  * phrase's words joined ("flightpath" beside "flight path") is the same term,
  * so it is not counted twice.
  */
@@ -41,13 +44,15 @@ export function parseQuery(query) {
     const joined = ws.join('');
     const existing = terms.get(joined);
     if (existing && (existing.phrase || !phrase)) return;
-    terms.set(joined, { words: ws, phrase, text: ws.join(' '), joined, label });
+    // Rarity is judged on the words that carry meaning, not on "of" or "the".
+    const weightWords = ws.filter(w => !STOP_WORDS.has(w));
+    terms.set(joined, { words: ws, weightWords, phrase, text: ws.join(' '), joined, label });
   };
-  for (const [, quoted, plain] of (query || '').matchAll(/"([^"]*)"?|([^\s"]+)/g)) {
+  for (const [, quoted, plain] of (query || '').matchAll(/"([^"]*)"|([^\s"]+)/g)) {
     const typed = (quoted ?? plain).trim().replace(/\s+/g, ' ');
     const ws = words(typed);
     if (quoted !== undefined && ws.length > 1) {
-      add(ws, true, typed);
+      if (ws.some(w => !STOP_WORDS.has(w))) add(ws, true, typed);
     } else {
       // A token that is one word keeps its typed form; one that splits into
       // several (camelCase, hyphens) shows each word.
@@ -90,7 +95,7 @@ function termScore(prepared, term) {
   }
   const w = term.text;
   if (prepared.nameWords.has(w)) return 3;
-  if (prepared.nameText.includes(w)) return 2;
+  if (w.length >= 4 && prepared.nameText.includes(w)) return 2;
   return prepared.commentWords.has(w) ? 1 : 0;
 }
 
@@ -102,7 +107,7 @@ function score(prepared, terms, weight) {
     // A score of 1 means the term was found only in the description.
     if (s > 0) matches.push({ term: term.label, where: s === 1 ? 'description' : 'name' });
     // A phrase is as rare as its rarest word.
-    total += s * Math.max(...term.words.map(weight));
+    total += s * Math.max(...term.weightWords.map(weight));
   }
   return { matches, matched: matches.length, total };
 }

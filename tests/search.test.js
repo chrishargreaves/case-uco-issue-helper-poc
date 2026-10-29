@@ -151,3 +151,26 @@ test('matched terms are shown as typed, not in their internal lower-case singula
   const [result] = search(index, 'UAV Logs').core;
   assert.deepEqual(result.matches.map(m => m.term), ['UAV', 'Logs']);
 });
+
+test('terms shorter than four letters match whole name words only, not parts of words', () => {
+  const index = prepareIndex([entry('Relationship'), entry('IPAddress'), entry('loginTime'), entry('EventLog')]);
+  assert.deepEqual(names(search(index, 'ip').core), ['IPAddress']);
+  assert.deepEqual(names(search(index, 'logs').core), ['EventLog']);
+  assert.deepEqual(names(search(index, 'i').core), []);
+});
+
+test('longer terms still match part of a name, so a half-typed word finds results', () => {
+  const index = prepareIndex([entry('MobileDevice')]);
+  assert.deepEqual(names(search(index, 'mobi').core), ['MobileDevice']);
+});
+
+test('an unclosed quote is ignored and the following words are searched as ordinary words', () => {
+  const index = prepareIndex([entry('FloppyDisk'), entry('Diskette')]);
+  const { core } = search(index, '12" floppy disks diskette');
+  assert.deepEqual(names(core).sort(), ['Diskette', 'FloppyDisk']);
+});
+
+test('a quoted phrase made only of stop words is ignored', () => {
+  const index = prepareIndex([entry('Thing', { comment: 'one of the things' })]);
+  assert.deepEqual(search(index, '"of the"'), { core: [], extension: [] });
+});

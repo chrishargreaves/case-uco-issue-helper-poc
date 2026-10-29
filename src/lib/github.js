@@ -32,7 +32,15 @@ export function newIssueUrl(repo, { title, body }) {
 export function issueHandOff(repo, { title, body }) {
   const full = newIssueUrl(repo, { title, body });
   if (full.length <= MAX_URL_LENGTH) return { url: full, tooLong: false };
-  return { url: newIssueUrl(repo, { title }), tooLong: true };
+  // Leave the body out. In the unlikely case that the title alone is too
+  // long, shorten it until the link fits; the submitter can correct it on GitHub.
+  let short = title;
+  let url = newIssueUrl(repo, { title: short });
+  while (url.length > MAX_URL_LENGTH && short.length > 0) {
+    short = short.slice(0, Math.floor(short.length * 0.9));
+    url = newIssueUrl(repo, { title: short });
+  }
+  return { url, tooLong: true };
 }
 
 /**
