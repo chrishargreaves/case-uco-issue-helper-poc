@@ -30,13 +30,17 @@ function words(text) {
 
 /**
  * The search terms in a query: single words (without stop words) and quoted
- * phrases. An unclosed quote runs to the end of the query.
+ * phrases. An unclosed quote runs to the end of the query. A word that is a
+ * phrase's words joined ("flightpath" beside "flight path") is the same term,
+ * so it is not counted twice.
  */
 export function parseQuery(query) {
   const terms = new Map();
   const add = (ws, phrase) => {
-    const key = ws.join(' ');
-    if (!terms.has(key)) terms.set(key, { words: ws, phrase, text: key, joined: ws.join('') });
+    const joined = ws.join('');
+    const existing = terms.get(joined);
+    if (existing && (existing.phrase || !phrase)) return;
+    terms.set(joined, { words: ws, phrase, text: ws.join(' '), joined });
   };
   for (const [, quoted, plain] of (query || '').matchAll(/"([^"]*)"?|([^\s"]+)/g)) {
     const ws = words(quoted ?? plain);
@@ -72,8 +76,9 @@ export function prepareIndex(entries) {
 
 function termScore(prepared, term) {
   if (term.phrase) {
-    if (prepared.nameJoined.includes(term.joined) || prepared.labelPhrase.includes(` ${term.text} `)) return 3;
-    return prepared.commentPhrase.includes(` ${term.text} `) ? 1 : 0;
+    const inText = text => text.includes(` ${term.text} `) || text.includes(` ${term.joined} `);
+    if (prepared.nameJoined.includes(term.joined) || inText(prepared.labelPhrase)) return 3;
+    return inText(prepared.commentPhrase) ? 1 : 0;
   }
   const w = term.text;
   if (prepared.nameWords.has(w)) return 3;

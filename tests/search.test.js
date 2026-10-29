@@ -117,3 +117,16 @@ test('an unclosed quote does not break the search', () => {
   const index = prepareIndex([entry('FlightPath')]);
   assert.doesNotThrow(() => search(index, '"flight path'));
 });
+
+test('a phrase and its joined form count as one term', () => {
+  // Each entry matches one term. If "flight path" and flightpath counted
+  // separately, FlightPath would match two and rank first.
+  const index = prepareIndex([entry('FlightPath'), entry('DroneThing')]);
+  const { core } = search(index, 'drone "flight path" flightpath');
+  assert.equal(core[0].localName, 'DroneThing');
+});
+
+test('a phrase also matches its joined form written in a label or comment', () => {
+  const index = prepareIndex([entry('Route', { comment: 'Stores the flightpath as points.' }), entry('Other')]);
+  assert.deepEqual(names(search(index, '"flight path"').core), ['Route']);
+});

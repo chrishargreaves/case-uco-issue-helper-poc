@@ -19,10 +19,12 @@ export function parseKeywords(text) {
 
 /**
  * The text the concept search starts from: the title, then the keywords. A
- * keyword of several words is quoted, so the search keeps it together.
+ * keyword of several words is quoted, so the search keeps it together, and is
+ * also given joined ("flight path" flightpath), the way ontology names are
+ * usually written.
  */
 export function searchText(draft) {
-  const keywords = parseKeywords(draft.keywords).map(k => (/\s/.test(k) ? `"${k}"` : k));
+  const keywords = parseKeywords(draft.keywords).map(k => (/\s/.test(k) ? `"${k}" ${k.replace(/\s+/g, '').toLowerCase()}` : k));
   return [draft.title.trim(), ...keywords].filter(Boolean).join(' ');
 }
 

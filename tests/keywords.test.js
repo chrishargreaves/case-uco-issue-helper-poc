@@ -17,12 +17,12 @@ test('no keywords gives an empty list', () => {
   assert.deepEqual(parseKeywords(' , ; '), []);
 });
 
-test('the search text is the title followed by the keywords, with multi-word keywords quoted', () => {
-  assert.equal(searchText({ title: 'Represent drone flight logs', keywords: 'UAV, flight path' }), 'Represent drone flight logs UAV "flight path"');
+test('the search text is the title then the keywords, a multi-word keyword quoted and also joined', () => {
+  assert.equal(searchText({ title: 'Represent drone flight logs', keywords: 'UAV, flight path' }), 'Represent drone flight logs UAV "flight path" flightpath');
 });
 
 test('quotes typed inside a keyword are not doubled', () => {
-  assert.equal(searchText({ title: '', keywords: '"flight path"' }), '"flight path"');
+  assert.equal(searchText({ title: '', keywords: '"flight path"' }), '"flight path" flightpath');
 });
 
 test('the search text works with only a title or only keywords', () => {
