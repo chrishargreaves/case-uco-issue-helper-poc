@@ -85,13 +85,19 @@ function step(n, id, guidance, ...content) {
 }
 
 /** A labelled text box. `before` is placed between the label and the box. */
-function textField(path, label, placeholder, { multiline = true, before = [] } = {}) {
+/** A folded "Example" control shown above a text box. */
+function example(text) {
+  return text && h('details', { class: 'field-example' }, h('summary', {}, 'Example'), h('p', {}, text));
+}
+
+/** A labelled text box. `before` is placed between the label and the example. */
+function textField(path, label, exampleText, { multiline = true, before = [] } = {}) {
   const id = `f-${path.replace(/\./g, '-')}`;
   const control = multiline
-    ? h('textarea', { id, 'data-path': path, placeholder, rows: 3 })
-    : h('input', { id, type: 'text', 'data-path': path, placeholder });
+    ? h('textarea', { id, 'data-path': path, rows: 3 })
+    : h('input', { id, type: 'text', 'data-path': path });
   control.value = getPath(state.draft, path) || '';
-  return h('div', { class: 'field' }, h('label', { for: id }, label), before, control);
+  return h('div', { class: 'field' }, h('label', { for: id }, label), before, example(exampleText), control);
 }
 
 function checkField(path, label) {
@@ -108,7 +114,8 @@ function renderRequirements() {
       h('div', { class: 'item-head' },
         h('h3', { id: `req-${r.id}` }, `Requirement ${i + 1}`),
         h('button', { type: 'button', class: 'button danger small', onclick: () => update(d => removeItem(d, 'requirements', r.id), renderRequirements), 'aria-label': `Remove requirement ${i + 1}` }, 'Remove')),
-      h('textarea', { 'aria-labelledby': `req-${r.id}`, 'data-list': 'requirements', 'data-id': r.id, 'data-key': 'text', placeholder: G.requirements.placeholder, rows: 2, value: r.text }))));
+      example(G.requirements.example),
+      h('textarea', { 'aria-labelledby': `req-${r.id}`, 'data-list': 'requirements', 'data-id': r.id, 'data-key': 'text', rows: 2, value: r.text }))));
 }
 
 function renderCompetencies() {
@@ -121,16 +128,19 @@ function renderCompetencies() {
         h('h3', { id: `sc-h-${c.id}` }, `${g.itemLabel} ${n}`),
         h('button', { type: 'button', class: 'button danger small', onclick: () => update(d => removeItem(d, 'competencies', c.id), renderCompetencies), 'aria-label': `Remove situation ${n}` }, 'Remove')),
       h('div', { class: 'field' },
-        h('textarea', { 'aria-labelledby': `sc-h-${c.id}`, 'data-competency': c.id, 'data-key': 'scenario', placeholder: g.scenarioPlaceholder, rows: 3, value: c.scenario })),
+        example(g.scenarioExample),
+        h('textarea', { 'aria-labelledby': `sc-h-${c.id}`, 'data-competency': c.id, 'data-key': 'scenario', rows: 3, value: c.scenario })),
       c.questions.map((q, j) => h('div', { class: 'question' },
         h('div', { class: 'item-head' },
           h('h4', { id: `q-h-${q.id}` }, `${g.questionLabel} ${j + 1}`),
           h('button', { type: 'button', class: 'button danger small', onclick: () => update(d => removeQuestion(d, c.id, q.id), renderCompetencies), 'aria-label': `Remove question ${j + 1} of situation ${n}` }, 'Remove')),
         h('div', { class: 'field' },
-          h('textarea', { 'aria-labelledby': `q-h-${q.id}`, 'data-competency': c.id, 'data-question': q.id, 'data-key': 'question', placeholder: g.questionPlaceholder, rows: 2, value: q.question })),
+          example(g.questionExample),
+          h('textarea', { 'aria-labelledby': `q-h-${q.id}`, 'data-competency': c.id, 'data-question': q.id, 'data-key': 'question', rows: 2, value: q.question })),
         h('div', { class: 'field' },
           h('label', { for: `r-${q.id}` }, g.resultLabel),
-          h('textarea', { id: `r-${q.id}`, 'data-competency': c.id, 'data-question': q.id, 'data-key': 'result', placeholder: g.resultPlaceholder, rows: 2, value: q.result })))),
+          example(g.resultExample),
+          h('textarea', { id: `r-${q.id}`, 'data-competency': c.id, 'data-question': q.id, 'data-key': 'result', rows: 2, value: q.result })))),
       h('button', { type: 'button', class: 'button quiet small', onclick: () => update(d => addQuestion(d, c.id), renderCompetencies, () => focusLast(`[data-competency="${c.id}"][data-key="question"]`)) }, `+ ${g.addQuestion}`));
   }));
 }
@@ -144,41 +154,31 @@ function renderForm() {
   const g = G;
   const form = $('form');
   form.replaceChildren(
-    step(1, 'title', g.title, textField('title', 'Title', g.title.placeholder, { multiline: false })),
+    step(1, 'title', g.title, textField('title', 'Title', g.title.example, { multiline: false })),
 
     step(2, 'search', g.search, h('div', { id: 'search-step' })),
 
     step(3, 'background', g.background,
-      Object.entries(g.background.fields).map(([key, f]) => textField(`background.${key}`, f.label, f.placeholder))),
+      Object.entries(g.background.fields).map(([key, f]) => textField(`background.${key}`, f.label, f.example))),
 
     step(4, 'requirements', g.requirements,
-      h('details', { class: 'example' },
-        h('summary', {}, 'Show example requirements'),
-        h('ul', {}, g.requirements.examples.map(e => h('li', {}, e)))),
       h('div', { id: 'requirements-list' }),
       h('button', { type: 'button', class: 'button quiet', onclick: () => update(d => addRequirement(d), renderRequirements, () => focusLast('[data-list="requirements"]')) }, `+ ${g.requirements.add}`)),
 
     step(5, 'benefits-risks', { heading: 'Benefits and risks' },
-      textField('benefits', g.benefits.heading, g.benefits.placeholder, {
+      textField('benefits', g.benefits.heading, g.benefits.example, {
         before: h('p', { class: 'why' }, g.benefits.prompt),
       }),
-      textField('risks', g.risks.heading, g.risks.placeholder, {
+      textField('risks', g.risks.heading, g.risks.example, {
         before: [h('p', { class: 'why' }, g.risks.prompt), checkField('noKnownRisks', g.risks.noneLabel)],
       })),
 
     step(6, 'competencies', g.competencies,
-      h('details', { class: 'example' },
-        h('summary', {}, g.competencies.examplesSummary),
-        g.competencies.examples.map(e => h('div', { class: 'worked-example' },
-          h('p', {}, h('strong', {}, `${g.competencies.scenarioLabel}: `), e.scenario),
-          h('p', {}, h('strong', {}, `${g.competencies.questionLabel}: `), e.question),
-          h('p', {}, h('strong', {}, `${g.competencies.resultLabel}: `), e.result),
-          h('p', {}, h('em', {}, e.source))))),
       h('div', { id: 'competencies-list' }),
       h('button', { type: 'button', class: 'button quiet', onclick: () => update(d => { const n = addCompetency(d); return addQuestion(n, n.competencies.at(-1).id); }, renderCompetencies, () => focusLast('[data-key="scenario"]')) }, `+ ${g.competencies.add}`)),
 
     step(7, 'solution', g.solution,
-      textField('solution', 'Suggested change', g.solution.placeholder),
+      textField('solution', 'Suggested change', g.solution.example),
       h('div', { class: 'example-actions' },
         h('button', { type: 'button', class: 'button quiet small', id: 'mention-related', onclick: mentionRelated }, g.solution.mentionRelated)),
       checkField('allowTranscription', g.solution.transcriptionLabel)),
@@ -259,7 +259,7 @@ function renderPreview() {
 function renderSearchStep() {
   const g = G.search;
   const input = h('input', {
-    type: 'search', id: 'search-input', placeholder: g.placeholder, value: state.query,
+    type: 'search', id: 'search-input', value: state.query,
     'aria-label': 'Search existing concepts', 'aria-controls': 'search-results',
     oninput: e => { state.queryEdited = true; searchSoon(e.target.value); },
   });
