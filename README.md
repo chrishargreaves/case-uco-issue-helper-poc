@@ -75,7 +75,6 @@ The page opens `https://github.com/<repo>/issues/new` with `title`, `body` and `
 | `src/content/guidance.js` | The prompts, explanations and worked examples shown on the page |
 | `scripts/` | The index build script and its source list |
 | `data/index.json` | The generated search index |
-| `docs/plans/` | The plan the prototype was built from |
 
 Parts of the index build are adapted from [FOCAL](https://github.com/chrishargreaves/FOCAL) (source list, Turtle parsing, entity indexing, prefix handling and version detection). They are copied rather than imported, so changes to FOCAL do not affect this project.
 
