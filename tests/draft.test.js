@@ -82,3 +82,11 @@ test('a corrupt autosave is ignored', () => {
   const storage = { getItem: () => '{broken', setItem() {} };
   assert.equal(loadFromStorage(storage), null);
 });
+
+test('a related concept without a group is rejected', () => {
+  const draft = fullDraft();
+  const { group, ...withoutGroup } = draft.related[0];
+  const result = parseDraft(JSON.stringify({ ...draft, related: [withoutGroup] }));
+  assert.equal(result.ok, false);
+  assert.match(result.error, /related/);
+});

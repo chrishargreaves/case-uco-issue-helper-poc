@@ -69,7 +69,7 @@ const isObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isRequirement = v => isObject(v) && isString(v.id) && isString(v.text);
 const isQuestion = v => isObject(v) && isString(v.id) && isString(v.question) && isString(v.result);
 const isCompetency = v => isObject(v) && isString(v.id) && isString(v.scenario) && isList(isQuestion)(v.questions);
-const isRelated = v => isObject(v) && isString(v.iri) && isString(v.compactIri) && isString(v.tier);
+const isRelated = v => isObject(v) && isString(v.iri) && isString(v.compactIri) && isString(v.tier) && isString(v.group);
 const isBackground = v => isObject(v) && ['need', 'audience', 'importance', 'details'].every(k => v[k] === undefined || isString(v[k]));
 
 const FIELD_CHECKS = {
