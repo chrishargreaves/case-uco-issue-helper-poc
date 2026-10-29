@@ -169,15 +169,25 @@ function nearestCoreAncestors(iri, links) {
 
 /**
  * Merge parsed sources into one entry list. The first source to declare an
- * IRI wins, so source order matters: CASE/UCO come first.
+ * IRI wins, so source order matters: CASE/UCO come first. A later declaration
+ * only fills in a missing label or comment. Each item may carry `extracted`,
+ * the entries already taken from that source, to avoid extracting twice.
  */
 export function buildIndex(parsedSources) {
   const entries = new Map();
   const links = new Map();
 
-  for (const { source, store } of parsedSources) {
-    for (const entry of extractEntries(store, source)) {
-      if (!entries.has(entry.iri)) entries.set(entry.iri, entry);
+  for (const { source, store, extracted } of parsedSources) {
+    for (const entry of extracted ?? extractEntries(store, source)) {
+      const existing = entries.get(entry.iri);
+      if (!existing) {
+        entries.set(entry.iri, entry);
+      } else {
+        // UCO core.ttl names some classes (uco-action:Action) with no label or
+        // comment; the defining module, read later, supplies them.
+        existing.label ??= entry.label;
+        existing.comment ??= entry.comment;
+      }
     }
     for (const [child, parents] of extractParentLinks(store)) {
       const merged = links.get(child) || [];

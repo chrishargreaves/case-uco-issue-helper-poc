@@ -4,8 +4,10 @@
 import { Parser, Store } from 'n3';
 import { registerPrefixes } from './prefixes.js';
 
+const FETCH_TIMEOUT_MS = 30_000;
+
 export async function fetchText(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }

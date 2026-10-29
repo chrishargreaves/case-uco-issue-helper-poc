@@ -1,0 +1,6 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix action: <https://ontology.unifiedcyberontology.org/uco/action/> .
+
+# As in UCO core.ttl: the class is named first with no label or comment.
+action:Action a owl:Class ; rdfs:isDefinedBy <https://ontology.unifiedcyberontology.org/uco/action> .

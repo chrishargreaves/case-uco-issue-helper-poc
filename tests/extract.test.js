@@ -134,3 +134,13 @@ test('a core mapping implied by a more specific core mapping is dropped', async 
   const investigation = index.find(e => e.localName === 'CACInvestigation');
   assert.deepEqual(investigation.mapsTo, ['case-investigation:Investigation']);
 });
+
+test('a label or comment missing from the first declaration is filled in from a later one', async () => {
+  const index = buildIndex([
+    await parsed('core-bare.ttl', { id: 'uco-core', group: 'UCO', tier: 'core', repo: 'ucoProject/UCO' }),
+    await parsed('core-full.ttl', { id: 'uco-action', group: 'UCO', tier: 'core', repo: 'ucoProject/UCO' }),
+  ]);
+  const action = index.find(e => e.localName === 'Action');
+  assert.equal(action.label, 'Action');
+  assert.equal(action.comment, 'An action is something that may be done or performed.');
+});

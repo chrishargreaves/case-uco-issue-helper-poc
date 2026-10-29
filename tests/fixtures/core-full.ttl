@@ -1,0 +1,7 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix action: <https://ontology.unifiedcyberontology.org/uco/action/> .
+
+action:Action a owl:Class ;
+    rdfs:label "Action"@en ;
+    rdfs:comment "An action is something that may be done or performed."@en .

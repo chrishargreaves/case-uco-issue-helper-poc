@@ -1,6 +1,7 @@
 // Builds data/index.json from the upstream ontologies listed in lib/sources.js.
-// Run with `npm run build-index`. A source that fails is reported and skipped;
-// the script exits non-zero only if no CASE/UCO source could be read.
+// Run with `npm run build-index`. An extension source (SOLVE-IT, CAC) that
+// fails is reported and skipped. If any CASE/UCO source fails, no index is
+// written, because a partial CASE/UCO index would hide existing concepts.
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { SOURCES, VERSIONS, assertAllowedUrl } from './lib/sources.js';
 import { fetchText, parseTurtle } from './lib/parse.js';
@@ -17,7 +18,7 @@ async function load(source) {
   assertAllowedUrl(source.url);
   const text = await fetchText(source.url);
   const { store } = await parseTurtle(text, source.url);
-  return { source, store };
+  return { source, store, extracted: extractEntries(store, source) };
 }
 
 async function loadAll(sources) {
@@ -52,7 +53,7 @@ const report = results.map(r => ({
   url: r.source.url,
   status: r.ok ? 'ok' : 'failed',
   ...(r.ok
-    ? { entries: extractEntries(r.store, r.source).length, version: extractDeclaredVersion(r.store) }
+    ? { entries: r.extracted.length, version: extractDeclaredVersion(r.store) }
     : { error: r.error }),
 }));
 
@@ -61,8 +62,8 @@ for (const row of report) {
   console.log(`${row.status === 'ok' ? '  ' : '! '}${row.id.padEnd(36)} ${detail}`);
 }
 
-if (!loaded.some(r => r.source.tier === 'core')) {
-  console.error('No CASE/UCO source could be read; index not written.');
+if (results.some(r => !r.ok && r.source.tier === 'core')) {
+  console.error('A CASE/UCO source could not be read; index not written.');
   process.exit(1);
 }
 
