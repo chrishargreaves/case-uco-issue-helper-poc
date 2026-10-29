@@ -6,6 +6,8 @@ This **prototype** is a single static web page for requesting a new concept in C
 
 The prototype covers requests for an entirely new concept. Requests to correct or extend an existing class or property start from the existing concept, and are not yet guided.
 
+The page is published with GitHub Pages at <https://chrishargreaves.github.io/case-uco-issue-helper-poc/>.
+
 ## Running it locally
 
 The page uses JavaScript modules and loads the search index with `fetch`, and browsers block both for pages opened directly from disk. It therefore needs to be served, for example:
@@ -14,7 +16,7 @@ The page uses JavaScript modules and loads the search index with `fetch`, and br
 npm run serve
 ```
 
-and then opened at <http://127.0.0.1:8000/>. Any static web server will do. `npm run serve` uses Python's built-in `http.server` with caching turned off, so that edited files are picked up on reload.
+and then opened at <http://127.0.0.1:8000/>. Node 22 or later is needed for the tests and the index build. Any static web server will do. `npm run serve` uses Python's built-in `http.server` with caching turned off, so that edited files are picked up on reload.
 
 ## Rebuilding the search index
 
@@ -25,13 +27,17 @@ npm install
 npm run build-index
 ```
 
-The script reports each source and the number of entries taken from it. A source that cannot be fetched or parsed is reported and skipped. If no CASE/UCO source can be read, no index is written.
+The script reports each source and the number of entries taken from it. An extension source (SOLVE-IT, CAC) that cannot be fetched or parsed is reported and skipped. If any CASE/UCO source cannot be read, no index is written, because a partial CASE/UCO index would hide existing concepts. Each fetch times out after 30 seconds.
+
+UCO and CASE are pinned to a release, but SOLVE-IT and CAC are read from their `main` branches, so two rebuilds can give different results. The index records the version each source declares about itself (for example CAC v3.1.0), which is shown in the build report.
 
 The sources are listed in `scripts/lib/sources.js`:
 
 - UCO and CASE, pinned to release 1.5.0. The master files (imports only) are left out.
 - The SOLVE-IT ontology modules, and the techniques from the SOLVE-IT knowledge base. Weaknesses, mitigations, citations and objectives are not indexed.
 - The Crimes Against Children (CAC) ontology modules (`ontology/cacontology-*.ttl`, Apache 2.0). Its SHACL shapes files are not indexed, and its example knowledge graphs are never fetched, because several appear to be based on real cases. `assertAllowedUrl` refuses any such URL.
+
+When a class is declared in more than one file, the first declaration is kept, and a later one only fills in a missing label or description. This matters for UCO, whose `core.ttl` names some classes (such as `uco-action:Action`) before the module that defines them.
 
 For extension classes, the index records the most specific CASE/UCO classes they specialise, following `rdfs:subClassOf` and `owl:equivalentClass` upwards through the extension's own classes. The search results and the filed request show these as "specialises".
 
@@ -42,6 +48,14 @@ npm test
 ```
 
 The tests use Node's built-in test runner and cover the index extraction, the draft format, the issue text, search, the UCO/CASE suggestion and the GitHub links. The page's DOM wiring (`src/app.js`) has no automated tests and was checked by hand in a browser.
+
+## Publishing
+
+`.github/workflows/pages.yml` publishes the page on every push to `main`. It runs the tests, checks that the index is valid JSON, and publishes only `index.html`, `assets`, `src` and `data`. In the repository settings, **Settings → Pages → Source** must be set to **GitHub Actions**.
+
+Drafts are autosaved in the browser's local storage. On GitHub Pages, every project site under `chrishargreaves.github.io` shares one origin, so any other page published there could read or overwrite an autosaved draft. Drafts are unpublished text that the submitter is about to post publicly, and a draft read back is validated before use, so this is accepted for a proof of concept. Serving the page from its own domain would remove it.
+
+The page sets a Content Security Policy that allows scripts, styles and data only from its own origin.
 
 ## What is known about GitHub's behaviour
 
@@ -64,6 +78,14 @@ The page opens `https://github.com/<repo>/issues/new` with `title`, `body` and `
 | `docs/plans/` | The plan the prototype was built from |
 
 Parts of the index build are adapted from [FOCAL](https://github.com/chrishargreaves/FOCAL) (source list, Turtle parsing, entity indexing, prefix handling and version detection). They are copied rather than imported, so changes to FOCAL do not affect this project.
+
+## Licences
+
+The code is licensed under the Apache License 2.0 (see `LICENSE`). The search index contains labels and descriptions taken from:
+
+- [UCO](https://github.com/ucoProject/UCO) and [CASE](https://github.com/casework/CASE), Apache License 2.0;
+- [SOLVE-IT](https://github.com/SOLVE-IT-DF/solve-it-ontology), MIT License;
+- the [Crimes Against Children ontology](https://github.com/Project-VIC-International/CAC-Ontology) from Project VIC International, Apache License 2.0. Project VIC asks organisations that use the ontology to email cacontology@projectvic.org.
 
 # Credits and disclaimer
 
