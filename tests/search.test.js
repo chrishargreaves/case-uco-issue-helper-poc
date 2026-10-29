@@ -85,3 +85,35 @@ test('request words such as "represent" are ignored', () => {
   const { core } = search(index, 'Represent drone flight logs');
   assert.deepEqual(names(core), ['Drone']);
 });
+
+test('a quoted phrase matches its words joined in a name, or the phrase in a label or comment', () => {
+  const index = prepareIndex([
+    entry('FlightPathFacet'),
+    entry('Route', { comment: 'The flight path of an aircraft.' }),
+    entry('Track', { label: 'flight path record' }),
+    entry('filePath'),
+    entry('FlightLog'),
+  ]);
+  const { core } = search(index, '"flight path"');
+  assert.deepEqual(names(core).sort(), ['FlightPathFacet', 'Route', 'Track']);
+});
+
+test('a phrase in the plural matches a singular name', () => {
+  const index = prepareIndex([entry('FlightPath')]);
+  assert.deepEqual(names(search(index, '"flight paths"').core), ['FlightPath']);
+});
+
+test('a phrase counts as one matched term alongside ordinary words', () => {
+  const index = prepareIndex([
+    entry('DroneFlightPath'),
+    entry('Drone'),
+    entry('FlightPath'),
+  ]);
+  const { core } = search(index, 'drone "flight path"');
+  assert.equal(core[0].localName, 'DroneFlightPath');
+});
+
+test('an unclosed quote does not break the search', () => {
+  const index = prepareIndex([entry('FlightPath')]);
+  assert.doesNotThrow(() => search(index, '"flight path'));
+});

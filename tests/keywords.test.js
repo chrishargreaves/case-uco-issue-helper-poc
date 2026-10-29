@@ -17,8 +17,12 @@ test('no keywords gives an empty list', () => {
   assert.deepEqual(parseKeywords(' , ; '), []);
 });
 
-test('the search text is the title followed by the keywords', () => {
-  assert.equal(searchText({ title: 'Represent drone flight logs', keywords: 'UAV, flight path' }), 'Represent drone flight logs UAV flight path');
+test('the search text is the title followed by the keywords, with multi-word keywords quoted', () => {
+  assert.equal(searchText({ title: 'Represent drone flight logs', keywords: 'UAV, flight path' }), 'Represent drone flight logs UAV "flight path"');
+});
+
+test('quotes typed inside a keyword are not doubled', () => {
+  assert.equal(searchText({ title: '', keywords: '"flight path"' }), '"flight path"');
 });
 
 test('the search text works with only a title or only keywords', () => {
@@ -36,4 +40,9 @@ test('issue searches use the title words in any order, and each keyword as a phr
 
 test('a title of only request words gives no title search', () => {
   assert.deepEqual(issueSearchTerms({ title: 'Add new concept', keywords: '' }), []);
+});
+
+test('quote marks typed around a keyword are removed', () => {
+  assert.deepEqual(parseKeywords('"flight path", UAV'), ['flight path', 'UAV']);
+  assert.deepEqual(issueSearchTerms({ title: '', keywords: '"flight path"' }), [{ term: 'flight path', exact: true }]);
 });

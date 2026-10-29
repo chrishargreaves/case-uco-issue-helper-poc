@@ -9,7 +9,7 @@ export function parseKeywords(text) {
   const seen = new Set();
   const keywords = [];
   for (const part of (text || '').split(/[,;\n]/)) {
-    const keyword = part.trim();
+    const keyword = part.replace(/"/g, '').trim();
     if (!keyword || seen.has(keyword.toLowerCase())) continue;
     seen.add(keyword.toLowerCase());
     keywords.push(keyword);
@@ -17,9 +17,13 @@ export function parseKeywords(text) {
   return keywords;
 }
 
-/** The text the concept search starts from: the title, then the keywords. */
+/**
+ * The text the concept search starts from: the title, then the keywords. A
+ * keyword of several words is quoted, so the search keeps it together.
+ */
 export function searchText(draft) {
-  return [draft.title.trim(), ...parseKeywords(draft.keywords)].filter(Boolean).join(' ');
+  const keywords = parseKeywords(draft.keywords).map(k => (/\s/.test(k) ? `"${k}"` : k));
+  return [draft.title.trim(), ...keywords].filter(Boolean).join(' ');
 }
 
 /**

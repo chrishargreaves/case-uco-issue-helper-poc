@@ -1,7 +1,9 @@
 // Keyword search over the index. Based on FOCAL's searchEntities
 // (src/utils/search.js), which matches the whole query as one string; here the
-// query is split into words so phrases such as "drone flight log" find
-// DroneFlightLog. Entries are ranked by how many words they match, then by
+// query is split into words so that "drone flight log" finds DroneFlightLog.
+// A quoted phrase such as "flight path" is kept together: it matches its words
+// joined in a name (FlightPath), or the phrase in a label or comment, but not
+// either word alone. Entries are ranked by how many terms they match, then by
 // how rare the matched words are across the index.
 
 export const STOP_WORDS = new Set([
@@ -26,8 +28,22 @@ function words(text) {
     .map(singular);
 }
 
-export function queryWords(query) {
-  return [...new Set(words(query).filter(w => !STOP_WORDS.has(w)))];
+/**
+ * The search terms in a query: single words (without stop words) and quoted
+ * phrases. An unclosed quote runs to the end of the query.
+ */
+export function parseQuery(query) {
+  const terms = new Map();
+  const add = (ws, phrase) => {
+    const key = ws.join(' ');
+    if (!terms.has(key)) terms.set(key, { words: ws, phrase, text: key, joined: ws.join('') });
+  };
+  for (const [, quoted, plain] of (query || '').matchAll(/"([^"]*)"?|([^\s"]+)/g)) {
+    const ws = words(quoted ?? plain);
+    if (quoted !== undefined && ws.length > 1) add(ws, true);
+    else for (const w of ws) if (!STOP_WORDS.has(w)) add([w], false);
+  }
+  return [...terms.values()];
 }
 
 /**
@@ -41,7 +57,10 @@ export function prepareIndex(entries) {
     nameWords: new Set([...words(entry.localName), ...words(entry.label)]),
     nameText: `${entry.localName} ${entry.label || ''}`.toLowerCase(),
     commentWords: new Set(words(entry.comment)),
-    localNameLower: entry.localName.toLowerCase(),
+    // Forms used to match quoted phrases.
+    nameJoined: words(entry.localName).join(''),
+    labelPhrase: ` ${words(entry.label).join(' ')} `,
+    commentPhrase: ` ${words(entry.comment).join(' ')} `,
   }));
   const frequency = new Map();
   for (const p of prepared) {
@@ -51,16 +70,25 @@ export function prepareIndex(entries) {
   return prepared;
 }
 
-function score(prepared, query, weight) {
+function termScore(prepared, term) {
+  if (term.phrase) {
+    if (prepared.nameJoined.includes(term.joined) || prepared.labelPhrase.includes(` ${term.text} `)) return 3;
+    return prepared.commentPhrase.includes(` ${term.text} `) ? 1 : 0;
+  }
+  const w = term.text;
+  if (prepared.nameWords.has(w)) return 3;
+  if (prepared.nameText.includes(w)) return 2;
+  return prepared.commentWords.has(w) ? 1 : 0;
+}
+
+function score(prepared, terms, weight) {
   let matched = 0;
   let total = 0;
-  for (const w of query) {
-    let s = 0;
-    if (prepared.nameWords.has(w)) s = 3;
-    else if (prepared.nameText.includes(w)) s = 2;
-    else if (prepared.commentWords.has(w)) s = 1;
+  for (const term of terms) {
+    const s = termScore(prepared, term);
     if (s > 0) matched += 1;
-    total += s * weight(w);
+    // A phrase is as rare as its rarest word.
+    total += s * Math.max(...term.words.map(weight));
   }
   return { matched, total };
 }
@@ -70,7 +98,7 @@ function score(prepared, query, weight) {
  * capped at `limit`: CASE/UCO entries in `core`, SOLVE-IT and CAC in `extension`.
  */
 export function search(prepared, query, { limit = 20 } = {}) {
-  const q = queryWords(query);
+  const q = parseQuery(query);
   if (q.length === 0) return { core: [], extension: [] };
 
   const weight = prepared.weight || (() => 1);
@@ -78,7 +106,7 @@ export function search(prepared, query, { limit = 20 } = {}) {
   for (const p of prepared) {
     const { matched, total } = score(p, q, weight);
     if (matched === 0) continue;
-    hits.push({ p, matched, total, startsWith: p.localNameLower.startsWith(q[0]) ? 1 : 0 });
+    hits.push({ p, matched, total, startsWith: p.nameJoined.startsWith(q[0].joined) ? 1 : 0 });
   }
 
   hits.sort((a, b) =>
