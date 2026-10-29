@@ -1,0 +1,28 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix cacontology: <https://cacontology.projectvic.org#> .
+@prefix uco-core: <https://ontology.unifiedcyberontology.org/uco/core/> .
+@prefix investigation: <https://ontology.caseontology.org/case/investigation/> .
+
+cacontology:Offender
+    a owl:Class ;
+    rdfs:label "Offender" ;
+    rdfs:comment "A person who commits an offence." ;
+    rdfs:subClassOf uco-core:UcoObject, cacontology:Person .
+
+cacontology:CACInvestigation
+    a owl:Class ;
+    rdfs:label "CAC Investigation" ;
+    owl:equivalentClass investigation:Investigation .
+
+cacontology:Person
+    a owl:Class ;
+    rdfs:label "Person" .
+
+cacontology:Suspect
+    a owl:Class ;
+    rdfs:label "Suspect" ;
+    rdfs:subClassOf cacontology:Offender .
+
+cacontology:LoopA a owl:Class ; rdfs:subClassOf cacontology:LoopB .
+cacontology:LoopB a owl:Class ; rdfs:subClassOf cacontology:LoopA .

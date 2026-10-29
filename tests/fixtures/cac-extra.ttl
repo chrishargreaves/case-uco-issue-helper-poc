@@ -1,0 +1,5 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix cacontology: <https://cacontology.projectvic.org#> .
+
+# A second path from CACInvestigation to uco-core:UcoObject, through Offender.
+cacontology:CACInvestigation rdfs:subClassOf cacontology:Offender .

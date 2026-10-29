@@ -1,0 +1,25 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix solveit-core: <https://ontology.solveit-df.org/solveit/core/> .
+@prefix solveit-observable: <https://ontology.solveit-df.org/solveit/observable/> .
+@prefix : <https://ontology.solveit-df.org/solveit/kb/> .
+
+:techniqueDFT-1001
+    a owl:Class, solveit-core:Technique ;
+    rdfs:label "DFT-1001: Triage devices or media"@en ;
+    solveit-core:techniqueID "DFT-1001" ;
+    solveit-core:techniqueDescription "Digital forensic triage is a partial forensic examination." ;
+    solveit-core:hasCASEInputClass solveit-observable:DeviceSet ;
+    solveit-core:hasCASEOutputClass solveit-observable:PrioritizedDeviceSet .
+
+:weaknessDFW-1001
+    a solveit-core:Weakness ;
+    rdfs:label "DFW-1001: Some weakness" .
+
+:mitigationDFM-1001
+    a solveit-core:Mitigation ;
+    rdfs:label "DFM-1001: Some mitigation" .
+
+:SomeOtherClass
+    a owl:Class ;
+    rdfs:label "Not a technique" .

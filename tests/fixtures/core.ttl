@@ -1,0 +1,22 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix observable: <https://ontology.unifiedcyberontology.org/uco/observable/> .
+
+<https://ontology.unifiedcyberontology.org/uco/observable>
+    a owl:Ontology ;
+    owl:versionIRI <https://ontology.unifiedcyberontology.org/uco/observable/1.5.0> .
+
+observable:MobileDevice
+    a owl:Class ;
+    rdfs:label "MobileDevice"@en ;
+    rdfs:comment "A mobile device is a portable computing device."@en .
+
+observable:deviceName
+    a owl:DatatypeProperty ;
+    rdfs:label "deviceName" .
+
+observable:hasDevice
+    a owl:ObjectProperty .
+
+_:anon a owl:Class ;
+    rdfs:label "Anonymous" .
