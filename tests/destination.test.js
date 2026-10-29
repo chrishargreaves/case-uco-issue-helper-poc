@@ -19,7 +19,7 @@ test('mostly CASE marked concepts suggest CASE', () => {
   const s = suggestDestination({ marked: [caseC(1), caseC(2), caseC(3), uco(1)], results: [] });
   assert.equal(s.repo, 'casework/CASE');
   assert.equal(s.basis, 'marked');
-  assert.match(s.reason, /3 of 4/);
+  assert.match(s.reason, /3 of the 4 CASE\/UCO concepts you marked/);
 });
 
 test('an even split stays with UCO', () => {
@@ -45,4 +45,14 @@ test('both repositories have a plain-language description', () => {
     assert.ok(REPOSITORIES[repo].name);
     assert.ok(REPOSITORIES[repo].covers.length > 20);
   }
+});
+
+test('a single marked concept is described in the singular', () => {
+  const s = suggestDestination({ marked: [uco(1)], results: [] });
+  assert.equal(s.reason, 'The only CASE/UCO concept you marked as related is in UCO.');
+});
+
+test('a unanimous result says all', () => {
+  const s = suggestDestination({ marked: [caseC(1), caseC(2)], results: [] });
+  assert.match(s.reason, /^All 2 CASE\/UCO concepts you marked as related are in CASE/);
 });

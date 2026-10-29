@@ -3,9 +3,11 @@
 
 import { DESTINATIONS } from './draft.js';
 
-// GitHub rejects very long URLs. The exact limit is not documented; this
-// threshold is conservative, and the clipboard is the fallback above it.
-export const MAX_URL_LENGTH = 8000;
+// GitHub rejects very long URLs and does not document the limit. Tested on
+// 2026-10-29 while signed out: 6,000 characters redirected to sign-in
+// normally, 7,000-8,000 gave server errors, 9,000 and above gave 414. Above
+// this threshold the clipboard is the fallback.
+export const MAX_URL_LENGTH = 6000;
 
 const LABEL = 'change request';
 

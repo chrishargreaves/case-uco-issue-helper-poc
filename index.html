@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CASE/UCO Change Request Helper</title>
+  <meta name="description" content="Draft a request for a new CASE/UCO concept in plain language, check what already exists, and file it on GitHub.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6f4a'/%3E%3Cpath d='M9 16h14M16 9v14' stroke='white' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script type="module" src="src/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#form">Skip to the form</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <p class="eyebrow">Prototype</p>
+      <h1>Request a new CASE/UCO concept</h1>
+      <p class="lede">Describe something that CASE/UCO cannot represent today. This page asks for each part of the change request in plain language, shows what already exists, and prepares the issue for you to file on GitHub from your own account. Nothing is sent anywhere until you file it.</p>
+      <div class="draft-actions" role="group" aria-label="Draft">
+        <button type="button" class="button quiet" id="save-draft">Save draft to a file</button>
+        <label class="button quiet file-button">Load draft from a file<input type="file" id="load-draft" accept=".json,application/json"></label>
+        <button type="button" class="button quiet" id="new-draft">Start a new draft</button>
+      </div>
+      <p class="status" id="draft-status" role="status" aria-live="polite"></p>
+    </div>
+  </header>
+
+  <main class="wrap layout">
+    <form id="form" class="form" novalidate autocomplete="off"></form>
+
+    <aside class="panel" aria-label="Existing concepts and preview">
+      <div class="tabs" role="tablist" aria-label="Panel">
+        <button type="button" role="tab" id="tab-search" aria-controls="panel-search" aria-selected="true">Existing concepts <span class="count" id="marked-count" hidden></span></button>
+        <button type="button" role="tab" id="tab-preview" aria-controls="panel-preview" aria-selected="false" tabindex="-1">Preview</button>
+      </div>
+      <section id="panel-search" role="tabpanel" aria-labelledby="tab-search" class="tabpanel"></section>
+      <section id="panel-preview" role="tabpanel" aria-labelledby="tab-preview" class="tabpanel" hidden>
+        <p class="hint">This is exactly the text that will be filed. GitHub shows it formatted.</p>
+        <pre class="preview" id="preview" tabindex="0" aria-label="Issue text preview"></pre>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Search covers UCO and CASE <span id="index-versions">1.5.0</span>, the SOLVE-IT ontology and knowledge base, and the Crimes Against Children (CAC) ontology from Project VIC (Apache 2.0). <span id="index-built"></span></p>
+      <p>This is an AI-generated prototype; see the README for credits.</p>
+    </div>
+  </footer>
+</body>
+</html>

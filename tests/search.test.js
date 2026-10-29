@@ -70,3 +70,18 @@ test('each tier is capped at the limit', () => {
   const many = prepareIndex(Array.from({ length: 50 }, (_, i) => entry(`Thing${i}`)));
   assert.equal(search(many, 'thing', { limit: 20 }).core.length, 20);
 });
+
+test('a rare word outranks a common one when both entries match one word', () => {
+  const entries = [
+    ...Array.from({ length: 10 }, (_, i) => entry(`Common${i}`, { label: `common thing ${i}` })),
+    entry('Rare'),
+  ];
+  const { core } = search(prepareIndex(entries), 'common rare');
+  assert.equal(core[0].localName, 'Rare');
+});
+
+test('request words such as "represent" are ignored', () => {
+  const index = prepareIndex([entry('representsAgency'), entry('Drone')]);
+  const { core } = search(index, 'Represent drone flight logs');
+  assert.deepEqual(names(core), ['Drone']);
+});

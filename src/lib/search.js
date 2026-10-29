@@ -1,9 +1,14 @@
 // Keyword search over the index. Based on FOCAL's searchEntities
 // (src/utils/search.js), which matches the whole query as one string; here the
 // query is split into words so phrases such as "drone flight log" find
-// DroneFlightLog, and entries are ranked by how many words they match.
+// DroneFlightLog. Entries are ranked by how many words they match, then by
+// how rare the matched words are across the index.
 
-const STOP_WORDS = new Set(['a', 'an', 'and', 'the', 'of', 'for', 'to', 'in', 'on', 'or', 'with', 'is', 'by', 'from']);
+const STOP_WORDS = new Set([
+  'a', 'an', 'and', 'the', 'of', 'for', 'to', 'in', 'on', 'or', 'with', 'is', 'by', 'from',
+  // Words common in change-request titles that say nothing about the concept.
+  'represent', 'representing', 'representation', 'new', 'add', 'adding', 'support', 'allow', 'need', 'concept',
+]);
 
 /** Crude singular form, so "logs" matches "Log". */
 function singular(word) {
@@ -25,18 +30,28 @@ export function queryWords(query) {
   return [...new Set(words(query).filter(w => !STOP_WORDS.has(w)))];
 }
 
-/** Precompute the searchable forms of each entry once, after loading. */
+/**
+ * Precompute the searchable forms of each entry once, after loading. The
+ * result also carries how many entries use each name word, so that rare
+ * words count for more than common ones when ranking.
+ */
 export function prepareIndex(entries) {
-  return entries.map(entry => ({
+  const prepared = entries.map(entry => ({
     entry,
     nameWords: new Set([...words(entry.localName), ...words(entry.label)]),
     nameText: `${entry.localName} ${entry.label || ''}`.toLowerCase(),
     commentWords: new Set(words(entry.comment)),
     localNameLower: entry.localName.toLowerCase(),
   }));
+  const frequency = new Map();
+  for (const p of prepared) {
+    for (const w of p.nameWords) frequency.set(w, (frequency.get(w) || 0) + 1);
+  }
+  prepared.weight = w => Math.log((prepared.length + 1) / ((frequency.get(w) || 0) + 1)) + 1;
+  return prepared;
 }
 
-function score(prepared, query) {
+function score(prepared, query, weight) {
   let matched = 0;
   let total = 0;
   for (const w of query) {
@@ -45,7 +60,7 @@ function score(prepared, query) {
     else if (prepared.nameText.includes(w)) s = 2;
     else if (prepared.commentWords.has(w)) s = 1;
     if (s > 0) matched += 1;
-    total += s;
+    total += s * weight(w);
   }
   return { matched, total };
 }
@@ -58,9 +73,10 @@ export function search(prepared, query, { limit = 20 } = {}) {
   const q = queryWords(query);
   if (q.length === 0) return { core: [], extension: [] };
 
+  const weight = prepared.weight || (() => 1);
   const hits = [];
   for (const p of prepared) {
-    const { matched, total } = score(p, q);
+    const { matched, total } = score(p, q, weight);
     if (matched === 0) continue;
     hits.push({ p, matched, total, startsWith: p.localNameLower.startsWith(q[0]) ? 1 : 0 });
   }

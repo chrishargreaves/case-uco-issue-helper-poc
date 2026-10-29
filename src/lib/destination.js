@@ -32,18 +32,21 @@ export function suggestDestination({ marked = [], results = [] }) {
 
   const inCase = considered.filter(c => c.repo === 'casework/CASE').length;
   const inUco = considered.length - inCase;
-  const what = basis === 'marked' ? 'the CASE/UCO concepts you marked as related' : 'the closest CASE/UCO search results';
+  const what = basis === 'marked'
+    ? ['CASE/UCO concept you marked as related', 'CASE/UCO concepts you marked as related']
+    : ['closest CASE/UCO search result', 'closest CASE/UCO search results'];
+  const share = (count, repo) => {
+    if (considered.length === 1) return `The only ${what[0]} is in ${repo}`;
+    if (count === considered.length) return `All ${count} ${what[1]} are in ${repo}`;
+    return `${count} of the ${considered.length} ${what[1]} are in ${repo}`;
+  };
 
   if (inCase > inUco) {
     return {
       repo: 'casework/CASE',
       basis,
-      reason: `${inCase} of ${considered.length} of ${what} are in CASE, so this request is probably about investigations rather than general cyber-domain concepts.`,
+      reason: `${share(inCase, 'CASE')}, so this request is probably about investigations rather than general cyber-domain concepts.`,
     };
   }
-  return {
-    repo: DEFAULT_REPO,
-    basis,
-    reason: `${inUco} of ${considered.length} of ${what} are in UCO, so UCO is suggested.`,
-  };
+  return { repo: DEFAULT_REPO, basis, reason: `${share(inUco, 'UCO')}.` };
 }
