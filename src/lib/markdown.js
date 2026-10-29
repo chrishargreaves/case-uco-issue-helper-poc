@@ -52,7 +52,7 @@ function risks(draft) {
 function relatedLine(concept) {
   const label = concept.label && concept.label !== concept.compactIri ? `${concept.label}, ` : '';
   let line = `- \`${concept.compactIri}\` (${label}${concept.group})`;
-  if (concept.mapsTo?.length) line += ` — specialises ${concept.mapsTo.map(m => `\`${m}\``).join(', ')}`;
+  if (concept.mapsTo?.length) line += `, which specialises ${concept.mapsTo.map(m => `\`${m}\``).join(', ')}`;
   return line;
 }
 
