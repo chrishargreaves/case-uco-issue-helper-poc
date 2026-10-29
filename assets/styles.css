@@ -157,7 +157,7 @@ details.example p, details.example li { color: var(--muted); font-size: 0.93rem;
 .button.danger { border-color: transparent; background: transparent; color: var(--muted); }
 .button.danger:hover { color: var(--text); text-decoration: underline; }
 .button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
-.button:disabled { opacity: 0.5; cursor: not-allowed; }
+.button:disabled, .button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 
 .file-button { position: relative; overflow: hidden; }
 .file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }

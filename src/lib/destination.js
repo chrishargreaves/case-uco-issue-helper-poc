@@ -5,10 +5,12 @@
 
 export const REPOSITORIES = {
   'ucoProject/UCO': {
+    short: 'UCO',
     name: 'UCO (Unified Cyber Ontology)',
     covers: 'general concepts for the cyber domain: devices, files, accounts, messages, network traffic, tools, identities, locations and the actions performed on them.',
   },
   'casework/CASE': {
+    short: 'CASE',
     name: 'CASE (Cyber-investigation Analysis Standard Expression)',
     covers: 'concepts specific to investigations: investigative actions, examiners and investigators, authorisations, provenance records and the chain of evidence.',
   },
@@ -17,36 +19,50 @@ export const REPOSITORIES = {
 const DEFAULT_REPO = 'ucoProject/UCO';
 const TOP_RESULTS = 5;
 
+/** "because …" for the concepts counted, worded for one, two or more. */
+function because(count, total, repo, { marked, onlyCore }) {
+  if (!marked) {
+    if (total === 1) return `because your top search result is in ${repo}`;
+    if (count === total) return `because all your top ${total} search results are in ${repo}`;
+    return `because ${count} of your top ${total} search results are in ${repo}`;
+  }
+  const noun = onlyCore ? 'concept' : 'CASE/UCO concept';
+  if (total === 1) return `because the ${noun} you marked is in ${repo}`;
+  if (count === total) return `because ${total === 2 ? 'both' : `all ${total}`} ${noun}s you marked are in ${repo}`;
+  return `because ${count} of the ${total} ${noun}s you marked are in ${repo}`;
+}
+
+/**
+ * The suggested repository. `reason` is a clause that follows the repository
+ * name, e.g. "UCO, because the concept you marked is in UCO".
+ */
 export function suggestDestination({ marked = [], results = [] }) {
   const markedCore = marked.filter(c => c.tier === 'core');
-  const basis = markedCore.length > 0 ? 'marked' : 'results';
-  const considered = markedCore.length > 0 ? markedCore : results.filter(c => c.tier === 'core').slice(0, TOP_RESULTS);
+  const usesMarked = markedCore.length > 0;
+  const considered = usesMarked ? markedCore : results.filter(c => c.tier === 'core').slice(0, TOP_RESULTS);
 
   if (considered.length === 0) {
-    return {
-      repo: DEFAULT_REPO,
-      basis: 'default',
-      reason: 'No related CASE/UCO concepts have been found yet, so UCO is suggested. Most new concepts are general cyber-domain concepts, which belong in UCO.',
-    };
+    return { repo: DEFAULT_REPO, basis: 'default', reason: 'the default for new concepts' };
   }
 
   const inCase = considered.filter(c => c.repo === 'casework/CASE').length;
   const inUco = considered.length - inCase;
-  const what = basis === 'marked'
-    ? ['CASE/UCO concept you marked as related', 'CASE/UCO concepts you marked as related']
-    : ['closest CASE/UCO search result', 'closest CASE/UCO search results'];
-  const share = (count, repo) => {
-    if (considered.length === 1) return `The only ${what[0]} is in ${repo}`;
-    if (count === considered.length) return `All ${count} ${what[1]} are in ${repo}`;
-    return `${count} of the ${considered.length} ${what[1]} are in ${repo}`;
+  const repo = inCase > inUco ? 'casework/CASE' : DEFAULT_REPO;
+  const count = repo === DEFAULT_REPO ? inUco : inCase;
+  return {
+    repo,
+    basis: usesMarked ? 'marked' : 'results',
+    reason: because(count, considered.length, REPOSITORIES[repo].short, {
+      marked: usesMarked,
+      onlyCore: markedCore.length === marked.length,
+    }),
   };
+}
 
-  if (inCase > inUco) {
-    return {
-      repo: 'casework/CASE',
-      basis,
-      reason: `${share(inCase, 'CASE')}, so this request is probably about investigations rather than general cyber-domain concepts.`,
-    };
-  }
-  return { repo: DEFAULT_REPO, basis, reason: `${share(inUco, 'UCO')}.` };
+/** The sentence shown under the choice of repository. */
+export function describeDestination(chosen, suggestion) {
+  const suggested = `${REPOSITORIES[suggestion.repo].short}, ${suggestion.reason}`;
+  const filed = `It will be filed in ${chosen} on GitHub.`;
+  if (chosen === suggestion.repo) return `Suggested: ${suggested}. ${filed}`;
+  return `You chose ${REPOSITORIES[chosen].short}. The suggestion was ${suggested}. ${filed}`;
 }

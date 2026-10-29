@@ -9,7 +9,7 @@ import {
 } from './lib/draft.js';
 import { renderIssueBody } from './lib/markdown.js';
 import { prepareIndex, search } from './lib/search.js';
-import { suggestDestination, REPOSITORIES } from './lib/destination.js';
+import { suggestDestination, describeDestination, REPOSITORIES } from './lib/destination.js';
 import { issueHandOff, issueSearchUrl } from './lib/github.js';
 
 const storage = (() => { try { return window.localStorage; } catch { return undefined; } })();
@@ -186,8 +186,9 @@ function renderForm() {
       h('p', { class: 'prompt' }, g.destination.duplicates),
       h('ul', { class: 'issue-links', id: 'issue-links' }),
       h('div', { class: 'output-actions' },
-        h('a', { class: 'button', id: 'open-github', target: '_blank', rel: 'noopener noreferrer' }, 'Open on GitHub'),
-        h('button', { type: 'button', class: 'button quiet', id: 'copy-body', onclick: copyBody }, 'Copy issue text')),
+        h('button', { type: 'button', class: 'button quiet', onclick: showPreview }, 'Preview issue text'),
+        h('button', { type: 'button', class: 'button quiet', id: 'copy-body', onclick: copyBody }, 'Copy issue text'),
+        h('a', { class: 'button', id: 'open-github', target: '_blank', rel: 'noopener noreferrer' }, 'Open on GitHub')),
       h('p', { class: 'warning', id: 'output-warning', hidden: true }),
       h('p', { class: 'status', id: 'output-status', role: 'status', 'aria-live': 'polite' })),
   );
@@ -364,12 +365,7 @@ function renderDestination() {
     state.draft.destination = suggestion.repo;
     for (const radio of document.querySelectorAll('input[name="destination"]')) radio.checked = radio.value === suggestion.repo;
   }
-  const chosen = state.draft.destination;
-  const name = REPOSITORIES[chosen].name;
-  const text = chosen === suggestion.repo
-    ? `Suggested: ${REPOSITORIES[suggestion.repo].name}. ${suggestion.reason} The request will be filed in the ${chosen} repository on GitHub.`
-    : `You chose ${name}. The suggestion was ${REPOSITORIES[suggestion.repo].name}: ${suggestion.reason} The request will be filed in the ${chosen} repository on GitHub.`;
-  $('suggestion').textContent = text;
+  $('suggestion').textContent = describeDestination(state.draft.destination, suggestion);
 
   const term = state.draft.title.trim();
   $('issue-links').replaceChildren(...(term
@@ -494,17 +490,26 @@ function newDraft() {
 
 // ── Tabs ──
 
+function selectTab(tab, { focus = true } = {}) {
+  for (const t of document.querySelectorAll('[role="tab"]')) {
+    const on = t === tab;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+    $(t.getAttribute('aria-controls')).hidden = !on;
+  }
+  if (focus) tab.focus();
+}
+
+/** Show the Preview tab and move to it (it is below the form on narrow screens). */
+function showPreview() {
+  selectTab($('tab-preview'), { focus: false });
+  $('panel-preview').scrollIntoView({ block: 'start' });
+  $('preview').focus({ preventScroll: true });
+}
+
 function setupTabs() {
   const tabs = [...document.querySelectorAll('[role="tab"]')];
-  const select = tab => {
-    for (const t of tabs) {
-      const on = t === tab;
-      t.setAttribute('aria-selected', String(on));
-      t.tabIndex = on ? 0 : -1;
-      $(t.getAttribute('aria-controls')).hidden = !on;
-    }
-    tab.focus();
-  };
+  const select = tab => selectTab(tab);
   for (const tab of tabs) {
     tab.addEventListener('click', () => select(tab));
     tab.addEventListener('keydown', e => {
