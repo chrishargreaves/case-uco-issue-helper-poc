@@ -45,6 +45,8 @@ export const GUIDANCE = {
     heading: 'Requirements',
     prompt: 'What CASE/UCO must be able to do, one statement per box, each one checkable as met or not met.',
     example: 'It must be possible to represent a drone flight log, linked to the drone that recorded it.',
+    itemLabel: 'Requirement',
+    empty: 'No requirements yet. Most requests need at least one.',
     add: 'Add requirement',
   },
 
@@ -63,14 +65,15 @@ export const GUIDANCE = {
 
   competencies: {
     heading: 'Questions the data should answer',
-    prompt: 'Describe a situation where the concept would be used, a question you could not answer today, and the answer you would expect. Including things that should not match makes a wrong answer easy to spot.',
-    scenarioLabel: 'Situation',
+    prompt: 'Describe a situation where the concept would be used, a question you cannot answer today, and the answer you would expect.',
+    hint: 'Mention things that should not match too, so a wrong answer is easy to spot.',
     scenarioExample: 'A drone was seized near a prison and its flight log was extracted. The log covers three flights.',
     questionLabel: 'Question',
     questionExample: 'Which flights passed over the prison boundary?',
     resultLabel: 'Expected answer',
     resultExample: 'One flight; two of its logged positions fall inside the boundary. The other two flights do not.',
     itemLabel: 'Situation',
+    empty: 'No situations yet. One is usually enough to show what the change is for.',
     add: 'Add a situation',
     addQuestion: 'Add another question',
   },
@@ -92,11 +95,11 @@ export const GUIDANCE = {
     extensionNote: 'Not part of CASE/UCO, but shows how another project has modelled it.',
     nearlyFits: 'If this nearly fits, a request to correct or extend it may suit better. This tool does not yet guide that kind of request.',
     mark: 'Mark as related',
-    unmark: 'Marked as related',
     markShort: 'Mark',
     unmarkShort: 'Marked',
     searchIssues: 'Search existing issues',
     empty: 'No matches. Try a shorter or different word.',
+    indexError: 'The concept search could not be loaded, so existing concepts cannot be checked here. You can still write and file the request.',
   },
 
   destination: {

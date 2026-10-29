@@ -3,10 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>CASE/UCO Change Request Helper</title>
   <meta name="description" content="Draft a request for a new CASE/UCO concept in plain language, check what already exists, and file it on GitHub.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6f4a'/%3E%3Cpath d='M9 16h14M16 9v14' stroke='white' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="assets/styles.css">
+  <!-- Start downloading the index while the scripts load; crossorigin lets fetch() reuse it. -->
+  <link rel="preload" href="data/index.json" as="fetch" crossorigin>
   <script type="module" src="src/app.js"></script>
 </head>
 <body>
@@ -42,15 +45,15 @@
         <button type="button" class="button quiet copy-body">Copy issue text</button>
         <a class="button open-github" target="_blank" rel="noopener noreferrer">Open on GitHub</a>
       </div>
-      <p class="warning output-warning" hidden></p>
+      <p class="warning output-warning" id="output-warning-dialog" hidden></p>
       <p class="status" role="status" aria-live="polite"></p>
     </div>
   </dialog>
 
   <footer class="site-footer">
     <div class="wrap">
-      <p>Search covers UCO and CASE <span id="index-versions">1.5.0</span>, the SOLVE-IT ontology and knowledge base, and the Crimes Against Children (CAC) ontology from Project VIC (Apache 2.0). <span id="index-built"></span></p>
-      <p>This is an AI-generated prototype; see the README for credits.</p>
+      <p>Search covers <span id="index-versions">UCO and CASE 1.5.0</span> (Apache 2.0), the SOLVE-IT ontology and knowledge base (MIT), and the Crimes Against Children (CAC) ontology from Project VIC (Apache 2.0). <span id="index-built"></span></p>
+      <p>This is an AI-generated prototype. See the <a href="https://github.com/chrishargreaves/case-uco-issue-helper-poc#readme">README on GitHub</a> for credits and licences.</p>
     </div>
   </footer>
 </body>
