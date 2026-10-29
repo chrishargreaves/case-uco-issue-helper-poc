@@ -62,7 +62,6 @@ export const GUIDANCE = {
     heading: 'Questions the data should answer',
     prompt: 'Describe a situation where the concept would be used, a question you could not answer today, and the answer you would expect. Including things that should not match makes a wrong answer easy to spot.',
     scenarioLabel: 'Situation',
-    scenarioFieldLabel: 'What happens',
     scenarioPlaceholder: 'For example: A drone was seized near a prison and its flight log was extracted. The log covers three flights.',
     questionLabel: 'Question',
     questionPlaceholder: 'For example: Which flights passed over the prison boundary?',
