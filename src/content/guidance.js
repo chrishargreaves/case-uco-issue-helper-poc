@@ -73,7 +73,7 @@ export const GUIDANCE = {
     resultLabel: 'Expected answer',
     resultExample: 'One flight; two of its logged positions fall inside the boundary. The other two flights do not.',
     itemLabel: 'Situation',
-    empty: 'No situations yet. One is usually enough to show what the change is for.',
+    empty: 'No situations yet.',
     add: 'Add a situation',
     addQuestion: 'Add another question',
   },
