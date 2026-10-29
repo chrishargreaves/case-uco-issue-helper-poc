@@ -14,7 +14,7 @@ The page uses JavaScript modules and loads the search index with `fetch`, and br
 npm run serve
 ```
 
-and then opened at <http://localhost:8000/>. Any static web server will do; `npm run serve` uses Python's built-in `http.server`.
+and then opened at <http://127.0.0.1:8000/>. Any static web server will do. `npm run serve` uses Python's built-in `http.server` with caching turned off, so that edited files are picked up on reload.
 
 ## Rebuilding the search index
 

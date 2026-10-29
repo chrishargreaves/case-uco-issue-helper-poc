@@ -81,13 +81,14 @@ function step(n, id, guidance, ...content) {
     ...content);
 }
 
-function textField(path, label, placeholder, { multiline = true } = {}) {
+/** A labelled text box. `before` is placed between the label and the box. */
+function textField(path, label, placeholder, { multiline = true, before = [] } = {}) {
   const id = `f-${path.replace(/\./g, '-')}`;
   const control = multiline
     ? h('textarea', { id, 'data-path': path, placeholder, rows: 3 })
     : h('input', { id, type: 'text', 'data-path': path, placeholder });
   control.value = getPath(state.draft, path) || '';
-  return h('div', { class: 'field' }, h('label', { for: id }, label), control);
+  return h('div', { class: 'field' }, h('label', { for: id }, label), before, control);
 }
 
 function checkField(path, label) {
@@ -114,8 +115,8 @@ function renderCompetencies() {
     const n = i + 1;
     return h('div', { class: 'item' },
       h('div', { class: 'item-head' },
-        h('h3', {}, `Competency ${n}`),
-        h('button', { type: 'button', class: 'button danger small', onclick: () => update(d => removeItem(d, 'competencies', c.id), renderCompetencies), 'aria-label': `Remove competency ${n}` }, 'Remove')),
+        h('h3', {}, `${g.itemLabel} ${n}`),
+        h('button', { type: 'button', class: 'button danger small', onclick: () => update(d => removeItem(d, 'competencies', c.id), renderCompetencies), 'aria-label': `Remove situation ${n}` }, 'Remove')),
       h('div', { class: 'field' },
         h('label', { for: `sc-${c.id}` }, g.scenarioLabel),
         h('textarea', { id: `sc-${c.id}`, 'data-competency': c.id, 'data-key': 'scenario', placeholder: g.scenarioPlaceholder, rows: 3, value: c.scenario })),
@@ -155,19 +156,22 @@ function renderForm() {
       h('button', { type: 'button', class: 'button quiet', onclick: () => update(d => addRequirement(d), renderRequirements, () => focusLast('[data-list="requirements"]')) }, `+ ${g.requirements.add}`)),
 
     step(4, 'benefits-risks', { heading: 'Benefits and risks' },
-      textField('benefits', g.benefits.heading, g.benefits.placeholder),
-      h('p', { class: 'prompt' }, g.benefits.prompt),
-      textField('risks', g.risks.heading, g.risks.placeholder),
-      h('p', { class: 'why' }, `${g.risks.prompt} ${g.risks.why}`),
-      checkField('noKnownRisks', g.risks.noneLabel)),
+      textField('benefits', g.benefits.heading, g.benefits.placeholder, {
+        before: h('p', { class: 'why' }, g.benefits.prompt),
+      }),
+      textField('risks', g.risks.heading, g.risks.placeholder, {
+        before: [h('p', { class: 'why' }, `${g.risks.prompt} ${g.risks.why}`), checkField('noKnownRisks', g.risks.noneLabel)],
+      })),
 
     step(5, 'competencies', g.competencies,
-      h('details', { class: 'example' },
-        h('summary', {}, 'Show an example competency'),
-        h('p', {}, h('strong', {}, `${g.competencies.scenarioLabel}: `), g.competencies.example.scenario),
-        h('p', {}, h('strong', {}, `${g.competencies.questionLabel}: `), g.competencies.example.question),
-        h('p', {}, h('strong', {}, `${g.competencies.resultLabel}: `), g.competencies.example.result),
-        h('p', {}, h('em', {}, g.competencies.example.source))),
+      h('p', { class: 'why' }, g.competencies.terms),
+      h('details', { class: 'example', open: true },
+        h('summary', {}, g.competencies.examplesSummary),
+        g.competencies.examples.map(e => h('div', { class: 'worked-example' },
+          h('p', {}, h('strong', {}, `${g.competencies.scenarioLabel}: `), e.scenario),
+          h('p', {}, h('strong', {}, `${g.competencies.questionLabel}: `), e.question),
+          h('p', {}, h('strong', {}, 'Expected answer: '), e.result),
+          h('p', {}, h('em', {}, e.source))))),
       h('div', { id: 'competencies-list' }),
       h('button', { type: 'button', class: 'button quiet', onclick: () => update(d => { const n = addCompetency(d); return addQuestion(n, n.competencies.at(-1).id); }, renderCompetencies, () => focusLast('[data-key="scenario"]')) }, `+ ${g.competencies.add}`)),
 

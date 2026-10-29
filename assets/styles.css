@@ -118,11 +118,13 @@ input[type="text"], input[type="search"], textarea {
 textarea { min-height: 4.5em; resize: vertical; }
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.8; }
 
+.field > label.check { font-weight: 400; }
 .check { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
 .check input { margin-top: 0.3em; width: 1.1em; height: 1.1em; accent-color: var(--accent); }
 
 details.example { margin: 8px 0 12px; border-left: 3px solid var(--accent-soft); padding: 4px 12px; }
 details.example summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+details.example .worked-example + .worked-example { border-top: 1px dashed var(--border); margin-top: 8px; }
 details.example p, details.example li { color: var(--muted); font-size: 0.93rem; }
 .example-actions { margin: 8px 0; }
 
