@@ -19,11 +19,15 @@ const state = {
   index: null,
   indexError: null,
   query: '',
+  // The search follows the title until the submitter types their own search.
+  queryEdited: false,
   results: { core: [], extension: [] },
+  expanded: { core: false, extension: false },
   // Until the submitter picks a destination, it follows the suggestion.
   destinationChosen: false,
   undo: null,
 };
+state.query = state.draft.title;
 
 // ── Small helpers ──
 
@@ -142,17 +146,19 @@ function renderForm() {
   form.replaceChildren(
     step(1, 'title', g.title, textField('title', 'Title', g.title.placeholder, { multiline: false })),
 
-    step(2, 'background', g.background,
+    step(2, 'search', g.search, h('div', { id: 'search-step' })),
+
+    step(3, 'background', g.background,
       Object.entries(g.background.fields).map(([key, f]) => textField(`background.${key}`, f.label, f.placeholder))),
 
-    step(3, 'requirements', g.requirements,
+    step(4, 'requirements', g.requirements,
       h('details', { class: 'example' },
         h('summary', {}, 'Show example requirements'),
         h('ul', {}, g.requirements.examples.map(e => h('li', {}, e)))),
       h('div', { id: 'requirements-list' }),
       h('button', { type: 'button', class: 'button quiet', onclick: () => update(d => addRequirement(d), renderRequirements, () => focusLast('[data-list="requirements"]')) }, `+ ${g.requirements.add}`)),
 
-    step(4, 'benefits-risks', { heading: 'Benefits and risks' },
+    step(5, 'benefits-risks', { heading: 'Benefits and risks' },
       textField('benefits', g.benefits.heading, g.benefits.placeholder, {
         before: h('p', { class: 'why' }, g.benefits.prompt),
       }),
@@ -160,7 +166,7 @@ function renderForm() {
         before: [h('p', { class: 'why' }, g.risks.prompt), checkField('noKnownRisks', g.risks.noneLabel)],
       })),
 
-    step(5, 'competencies', g.competencies,
+    step(6, 'competencies', g.competencies,
       h('details', { class: 'example' },
         h('summary', {}, g.competencies.examplesSummary),
         g.competencies.examples.map(e => h('div', { class: 'worked-example' },
@@ -171,13 +177,13 @@ function renderForm() {
       h('div', { id: 'competencies-list' }),
       h('button', { type: 'button', class: 'button quiet', onclick: () => update(d => { const n = addCompetency(d); return addQuestion(n, n.competencies.at(-1).id); }, renderCompetencies, () => focusLast('[data-key="scenario"]')) }, `+ ${g.competencies.add}`)),
 
-    step(6, 'solution', g.solution,
+    step(7, 'solution', g.solution,
       textField('solution', 'Suggested change', g.solution.placeholder),
       h('div', { class: 'example-actions' },
         h('button', { type: 'button', class: 'button quiet small', id: 'mention-related', onclick: mentionRelated }, g.solution.mentionRelated)),
       checkField('allowTranscription', g.solution.transcriptionLabel)),
 
-    step(7, 'destination', g.destination,
+    step(8, 'destination', g.destination,
       h('div', { class: 'destinations', role: 'radiogroup', 'aria-labelledby': 'destination-heading' },
         DESTINATIONS.map(repo => h('label', { class: 'destination' },
           h('input', { type: 'radio', name: 'destination', value: repo, checked: state.draft.destination === repo, onchange: chooseDestination }),
@@ -185,12 +191,13 @@ function renderForm() {
       h('p', { class: 'suggestion', id: 'suggestion', 'aria-live': 'polite' }),
       h('p', { class: 'prompt' }, g.destination.duplicates),
       h('ul', { class: 'issue-links', id: 'issue-links' }),
-      h('div', { class: 'output-actions' },
-        h('button', { type: 'button', class: 'button quiet', onclick: showPreview }, 'Preview issue text'),
-        h('button', { type: 'button', class: 'button quiet', id: 'copy-body', onclick: copyBody }, 'Copy issue text'),
-        h('a', { class: 'button', id: 'open-github', target: '_blank', rel: 'noopener noreferrer' }, 'Open on GitHub')),
-      h('p', { class: 'warning', id: 'output-warning', hidden: true }),
-      h('p', { class: 'status', id: 'output-status', role: 'status', 'aria-live': 'polite' })),
+      h('div', { class: 'output' },
+        h('div', { class: 'output-actions' },
+          h('button', { type: 'button', class: 'button quiet', onclick: showPreview }, 'Preview issue text'),
+          h('button', { type: 'button', class: 'button quiet copy-body' }, 'Copy issue text'),
+          h('a', { class: 'button open-github', target: '_blank', rel: 'noopener noreferrer' }, 'Open on GitHub')),
+        h('p', { class: 'warning output-warning', hidden: true }),
+        h('p', { class: 'status', role: 'status', 'aria-live': 'polite' }))),
   );
   renderRequirements();
   renderCompetencies();
@@ -204,6 +211,7 @@ function onInput(event) {
   const d = state.draft;
   if (t.dataset.path) {
     setPath(d, t.dataset.path, value);
+    if (t.dataset.path === 'title' && !state.queryEdited) searchFromTitle();
   } else if (t.dataset.list) {
     const item = d[t.dataset.list].find(x => x.id === t.dataset.id);
     if (item) item[t.dataset.key] = value;
@@ -233,7 +241,7 @@ function update(fn, render, after) {
 const persist = debounce(() => saveToStorage(storage, state.draft), 300);
 
 function changed() {
-  $('output-status').textContent = '';
+  for (const status of document.querySelectorAll('.output .status')) status.textContent = '';
   renderPreview();
   renderDestination();
   renderOutput();
@@ -253,20 +261,28 @@ function renderSearchPanel() {
   const input = h('input', {
     type: 'search', id: 'search-input', placeholder: g.placeholder, value: state.query,
     'aria-label': 'Search existing concepts', 'aria-controls': 'search-results',
-    oninput: debounce(e => runSearch(e.target.value), 150),
+    oninput: e => { state.queryEdited = true; searchSoon(e.target.value); },
   });
-  $('panel-search').replaceChildren(
-    h('p', { class: 'hint' }, g.prompt),
+  $('search-step').replaceChildren(
     h('div', { class: 'search-row' }, input,
-      h('button', { type: 'button', class: 'button quiet small', onclick: () => { input.value = state.draft.title; runSearch(state.draft.title); } }, g.useTitle)),
+      h('button', { type: 'button', class: 'button quiet small', onclick: () => { state.queryEdited = false; input.value = state.draft.title; runSearch(state.draft.title); } }, g.useTitle)),
     h('div', { id: 'marked' }),
     h('div', { id: 'search-results', 'aria-live': 'polite' }));
   renderMarked();
   renderResults();
 }
 
+const searchSoon = debounce(query => runSearch(query), 150);
+
+function searchFromTitle() {
+  const input = $('search-input');
+  if (input) input.value = state.draft.title;
+  searchSoon(state.draft.title);
+}
+
 function runSearch(query) {
   state.query = query;
+  state.expanded = { core: false, extension: false };
   state.results = state.index ? search(state.index, query) : { core: [], extension: [] };
   renderResults();
   renderDestination();
@@ -288,10 +304,6 @@ function toggleMarked(entry) {
 
 function renderMarked() {
   const related = state.draft.related;
-  const count = $('marked-count');
-  count.hidden = related.length === 0;
-  count.textContent = related.length;
-  count.setAttribute('aria-label', `${related.length} marked as related`);
   $('mention-related') && ($('mention-related').disabled = related.length === 0);
   $('marked').replaceChildren(related.length === 0 ? '' : h('div', { class: 'marked' },
     h('h3', {}, `Marked as related (${related.length})`),
@@ -341,13 +353,23 @@ function renderResults() {
     return;
   }
   container.replaceChildren(
-    h('div', { class: 'results-group' },
-      h('h3', {}, `${g.coreHeading} (${core.length})`),
-      core.length ? h('ul', { class: 'results' }, core.map(resultItem)) : h('p', { class: 'note' }, 'No matches in CASE/UCO.')),
-    h('div', { class: 'results-group' },
-      h('h3', {}, `${g.extensionHeading} (${extension.length})`),
-      h('p', { class: 'note' }, g.extensionNote),
-      extension.length ? h('ul', { class: 'results' }, extension.map(resultItem)) : h('p', { class: 'note' }, 'No matches in the extensions.')));
+    resultsGroup('core', g.coreHeading, null, core, 'No matches in CASE/UCO.'),
+    resultsGroup('extension', g.extensionHeading, g.extensionNote, extension, 'No matches in the extensions.'));
+}
+
+const SHOWN_AT_FIRST = 5;
+
+function resultsGroup(tier, heading, note, entries, empty) {
+  const shown = state.expanded[tier] ? entries : entries.slice(0, SHOWN_AT_FIRST);
+  const hidden = entries.length - shown.length;
+  return h('div', { class: 'results-group' },
+    h('h3', {}, `${heading} (${entries.length})`),
+    note && h('p', { class: 'note' }, note),
+    entries.length ? h('ul', { class: 'results' }, shown.map(resultItem)) : h('p', { class: 'note' }, empty),
+    hidden > 0 && h('button', {
+      type: 'button', class: 'button quiet small',
+      onclick: () => { state.expanded[tier] = true; renderResults(); },
+    }, `Show all ${entries.length}`));
 }
 
 // ── Destination and output ──
@@ -373,25 +395,34 @@ function renderDestination() {
     : [h('li', {}, 'Add a title to search existing issues for it.')]));
 }
 
+/** Update every "Open on GitHub" link and its warning (in the last step and in the preview). */
 function renderOutput() {
   const title = state.draft.title.trim();
-  const link = $('open-github');
-  const warning = $('output-warning');
-  if (!title) {
-    link.removeAttribute('href');
-    link.setAttribute('aria-disabled', 'true');
-    warning.hidden = false;
-    warning.textContent = 'Add a title (step 1) before opening the issue on GitHub.';
-    return;
+  let href = null;
+  let label = 'Open on GitHub';
+  let warning = 'Add a title (step 1) before opening the issue on GitHub.';
+  if (title) {
+    const { url, tooLong } = issueHandOff(state.draft.destination, { title, body: renderIssueBody(state.draft) });
+    href = url;
+    label = tooLong ? 'Open on GitHub (title only)' : `Open on GitHub (${REPOSITORIES[state.draft.destination].short})`;
+    warning = tooLong
+      ? 'This request is too long to pass to GitHub in a link. Copy the issue text first, then open GitHub and paste it into the description box.'
+      : '';
   }
-  link.removeAttribute('aria-disabled');
-  const { url, tooLong } = issueHandOff(state.draft.destination, { title, body: renderIssueBody(state.draft) });
-  link.href = url;
-  link.textContent = tooLong ? 'Open on GitHub (title only)' : `Open on GitHub (${state.draft.destination.split('/')[1]})`;
-  warning.hidden = !tooLong;
-  warning.textContent = tooLong
-    ? 'This request is too long to pass to GitHub in a link. Copy the issue text first, then open GitHub and paste it into the description box.'
-    : '';
+  for (const link of document.querySelectorAll('.open-github')) {
+    if (href) {
+      link.href = href;
+      link.removeAttribute('aria-disabled');
+    } else {
+      link.removeAttribute('href');
+      link.setAttribute('aria-disabled', 'true');
+    }
+    link.textContent = label;
+  }
+  for (const p of document.querySelectorAll('.output-warning')) {
+    p.hidden = !warning;
+    p.textContent = warning;
+  }
 }
 
 async function copyText(text) {
@@ -408,11 +439,12 @@ async function copyText(text) {
   }
 }
 
-async function copyBody() {
+async function copyBody(event) {
+  const status = event.target.closest('.output').querySelector('.status');
   const ok = await copyText(renderIssueBody(state.draft));
-  $('output-status').textContent = ok
+  status.textContent = ok
     ? 'Issue text copied. Paste it into the description box on GitHub.'
-    : 'Copying failed. Open the Preview tab and copy the text from there.';
+    : 'Copying failed. Open the preview and copy the text from there.';
 }
 
 function mentionRelated() {
@@ -454,9 +486,10 @@ function undo() {
 }
 
 function rerenderAll() {
+  if (!state.queryEdited) state.query = state.draft.title;
   renderForm();
-  renderMarked();
-  renderResults();
+  renderSearchPanel();
+  runSearch(state.query);
   changed();
 }
 
@@ -488,36 +521,19 @@ function newDraft() {
   setStatus('Started a new draft.', true);
 }
 
-// ── Tabs ──
+// ── Preview ──
 
-function selectTab(tab, { focus = true } = {}) {
-  for (const t of document.querySelectorAll('[role="tab"]')) {
-    const on = t === tab;
-    t.setAttribute('aria-selected', String(on));
-    t.tabIndex = on ? 0 : -1;
-    $(t.getAttribute('aria-controls')).hidden = !on;
-  }
-  if (focus) tab.focus();
-}
-
-/** Show the Preview tab and move to it (it is below the form on narrow screens). */
 function showPreview() {
-  selectTab($('tab-preview'), { focus: false });
-  $('panel-preview').scrollIntoView({ block: 'start' });
-  $('preview').focus({ preventScroll: true });
+  renderPreview();
+  $('preview-dialog').showModal();
+  $('preview').focus();
 }
 
-function setupTabs() {
-  const tabs = [...document.querySelectorAll('[role="tab"]')];
-  const select = tab => selectTab(tab);
-  for (const tab of tabs) {
-    tab.addEventListener('click', () => select(tab));
-    tab.addEventListener('keydown', e => {
-      const i = tabs.indexOf(tab);
-      if (e.key === 'ArrowRight') select(tabs[(i + 1) % tabs.length]);
-      if (e.key === 'ArrowLeft') select(tabs[(i - 1 + tabs.length) % tabs.length]);
-    });
-  }
+function setupPreview() {
+  const dialog = $('preview-dialog');
+  $('close-preview').addEventListener('click', () => dialog.close());
+  // A click on the backdrop lands on the dialog element itself.
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
 }
 
 // ── Index ──
@@ -540,7 +556,8 @@ async function loadIndex() {
 
 renderForm();
 renderSearchPanel();
-setupTabs();
+setupPreview();
+document.addEventListener('click', e => { if (e.target.closest('.copy-body')) copyBody(e); });
 $('form').addEventListener('input', onInput);
 $('form').addEventListener('submit', e => e.preventDefault());
 $('save-draft').addEventListener('click', saveDraftFile);

@@ -50,7 +50,7 @@ body {
   font: 16px/1.5 var(--font);
 }
 
-.wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+.wrap { max-width: 820px; margin: 0 auto; padding: 0 16px; }
 
 a { color: var(--accent); }
 
@@ -71,19 +71,7 @@ h1 { margin: 4px 0 8px; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.2;
 
 /* ── Layout ── */
 
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
-  padding-top: 24px;
-  padding-bottom: 48px;
-}
-
-@media (min-width: 960px) {
-  .layout { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
-  .panel { position: sticky; top: 16px; max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
-  .tabpanel { overflow: auto; }
-}
+.layout { padding-top: 24px; padding-bottom: 48px; }
 
 /* ── Form sections ── */
 
@@ -163,17 +151,22 @@ details.example p, details.example li { color: var(--muted); font-size: 0.93rem;
 .file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .file-button:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
 
-/* ── Panel ── */
+/* ── Preview pop-up ── */
 
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-.tabs { display: flex; border-bottom: 1px solid var(--border); }
-.tabs [role="tab"] {
-  flex: 1; padding: 12px; border: 0; background: transparent; color: var(--muted);
-  font: inherit; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
+.preview-dialog {
+  width: min(860px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
 }
-.tabs [aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
-.count { display: inline-block; min-width: 1.5em; padding: 0 6px; border-radius: 999px; background: var(--accent); color: var(--accent-text); font-size: 0.8rem; }
-.tabpanel { padding: 16px; }
+.preview-dialog[open] { display: flex; flex-direction: column; gap: 8px; }
+.preview-dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+.dialog-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.dialog-head h2 { margin: 0; font-size: 1.2rem; }
+.preview-dialog .preview { flex: 1; min-height: 8em; overflow: auto; }
 .hint { margin: 0 0 8px; font-size: 0.9rem; color: var(--muted); }
 
 .preview {
@@ -238,5 +231,5 @@ details.example p, details.example li { color: var(--muted); font-size: 0.93rem;
 .site-footer { border-top: 1px solid var(--border); padding: 16px 0 32px; color: var(--muted); font-size: 0.85rem; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .button, .tabs [role="tab"] { transition: background-color 0.15s, color 0.15s; }
+  .button { transition: background-color 0.15s, color 0.15s; }
 }

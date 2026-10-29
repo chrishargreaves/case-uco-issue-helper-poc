@@ -28,19 +28,24 @@
 
   <main class="wrap layout">
     <form id="form" class="form" novalidate autocomplete="off"></form>
-
-    <aside class="panel" aria-label="Existing concepts and preview">
-      <div class="tabs" role="tablist" aria-label="Panel">
-        <button type="button" role="tab" id="tab-search" aria-controls="panel-search" aria-selected="true">Existing concepts <span class="count" id="marked-count" hidden></span></button>
-        <button type="button" role="tab" id="tab-preview" aria-controls="panel-preview" aria-selected="false" tabindex="-1">Preview</button>
-      </div>
-      <section id="panel-search" role="tabpanel" aria-labelledby="tab-search" class="tabpanel"></section>
-      <section id="panel-preview" role="tabpanel" aria-labelledby="tab-preview" class="tabpanel" hidden>
-        <p class="hint">This is exactly the text that will be filed. GitHub shows it formatted.</p>
-        <pre class="preview" id="preview" tabindex="0" aria-label="Issue text preview"></pre>
-      </section>
-    </aside>
   </main>
+
+  <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-heading">
+    <div class="dialog-head">
+      <h2 id="preview-heading">Issue text</h2>
+      <button type="button" class="button quiet small" id="close-preview">Close</button>
+    </div>
+    <p class="hint">This is the text that will be filed. GitHub shows it formatted.</p>
+    <pre class="preview" id="preview" tabindex="0" aria-label="Issue text"></pre>
+    <div class="output">
+      <div class="output-actions">
+        <button type="button" class="button quiet copy-body">Copy issue text</button>
+        <a class="button open-github" target="_blank" rel="noopener noreferrer">Open on GitHub</a>
+      </div>
+      <p class="warning output-warning" hidden></p>
+      <p class="status" role="status" aria-live="polite"></p>
+    </div>
+  </dialog>
 
   <footer class="site-footer">
     <div class="wrap">

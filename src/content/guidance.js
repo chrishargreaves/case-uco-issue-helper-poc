@@ -96,10 +96,10 @@ export const GUIDANCE = {
   },
 
   search: {
-    heading: 'Existing concepts',
-    prompt: 'Check whether the concept already exists before asking for it.',
+    heading: 'Check what already exists',
+    prompt: 'Search for the concept before asking for it, and mark anything related. The search starts from your title.',
     placeholder: 'For example: drone, flight log, chain of custody',
-    useTitle: 'Search for my title',
+    useTitle: 'Use my title',
     coreHeading: 'Already in CASE/UCO',
     extensionHeading: 'In extensions (SOLVE-IT, CAC)',
     extensionNote: 'Not part of CASE/UCO, but shows how another project has modelled it.',
