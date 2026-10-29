@@ -13,6 +13,7 @@ export function createDraft() {
   return {
     schemaVersion: SCHEMA_VERSION,
     title: '',
+    keywords: '',
     background: { need: '', audience: '', importance: '', details: '' },
     requirements: [],
     benefits: '',
@@ -74,6 +75,7 @@ const isBackground = v => isObject(v) && ['need', 'audience', 'importance', 'det
 
 const FIELD_CHECKS = {
   title: isString,
+  keywords: isString,
   background: isBackground,
   requirements: isList(isRequirement),
   benefits: isString,

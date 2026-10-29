@@ -11,6 +11,7 @@ import { renderIssueBody } from './lib/markdown.js';
 import { prepareIndex, search } from './lib/search.js';
 import { suggestDestination, describeDestination, REPOSITORIES } from './lib/destination.js';
 import { issueHandOff, issueSearchUrl } from './lib/github.js';
+import { searchText, issueSearchTerms } from './lib/keywords.js';
 
 const storage = (() => { try { return window.localStorage; } catch { return undefined; } })();
 
@@ -31,7 +32,7 @@ const state = {
   destinationChosen: false,
   undo: null,
 };
-state.query = state.draft.title;
+state.query = searchText(state.draft);
 
 // ── Small helpers ──
 
@@ -158,7 +159,12 @@ function renderForm() {
   const g = G;
   const form = $('form');
   form.replaceChildren(
-    step(1, 'title', g.title, textField('title', 'Title', g.title.example, { multiline: false })),
+    step(1, 'title', g.title,
+      textField('title', 'Title', g.title.example, { multiline: false }),
+      textField('keywords', g.keywords.label, g.keywords.example, {
+        multiline: false,
+        before: h('p', { class: 'why' }, g.keywords.prompt),
+      })),
 
     step(2, 'search', g.search, h('div', { id: 'search-step' })),
 
@@ -215,7 +221,7 @@ function onInput(event) {
   const d = state.draft;
   if (t.dataset.path) {
     setPath(d, t.dataset.path, value);
-    if (t.dataset.path === 'title' && !state.queryEdited) searchFromTitle();
+    if ((t.dataset.path === 'title' || t.dataset.path === 'keywords') && !state.queryEdited) searchFromDraft();
   } else if (t.dataset.list) {
     const item = d[t.dataset.list].find(x => x.id === t.dataset.id);
     if (item) item[t.dataset.key] = value;
@@ -269,7 +275,7 @@ function renderSearchStep() {
   });
   $('search-step').replaceChildren(
     h('div', { class: 'search-row' }, input,
-      h('button', { type: 'button', class: 'button quiet small', onclick: () => { state.queryEdited = false; input.value = state.draft.title; runSearch(state.draft.title); } }, g.useTitle)),
+      h('button', { type: 'button', class: 'button quiet small', onclick: () => { state.queryEdited = false; input.value = searchText(state.draft); runSearch(input.value); } }, g.useTitle)),
     h('div', { id: 'marked' }),
     h('div', { id: 'search-results', 'aria-live': 'polite' }));
   renderMarked();
@@ -278,10 +284,11 @@ function renderSearchStep() {
 
 const searchSoon = debounce(query => runSearch(query), 150);
 
-function searchFromTitle() {
+function searchFromDraft() {
+  const text = searchText(state.draft);
   const input = $('search-input');
-  if (input) input.value = state.draft.title;
-  searchSoon(state.draft.title);
+  if (input) input.value = text;
+  searchSoon(text);
 }
 
 function runSearch(query) {
@@ -414,10 +421,13 @@ function renderDestination() {
   }
   $('suggestion').textContent = describeDestination(state.draft.destination, suggestion);
 
-  const term = state.draft.title.trim();
-  $('issue-links').replaceChildren(...(term
-    ? DESTINATIONS.map(repo => h('li', {}, h('a', { href: issueSearchUrl(repo, term), target: '_blank', rel: 'noopener noreferrer' }, `Search ${repo} issues for “${term}”`)))
-    : [h('li', {}, 'Add a title to search existing issues for it.')]));
+  // One search per term: the title words, then each keyword.
+  const terms = issueSearchTerms(state.draft);
+  $('issue-links').replaceChildren(...(terms.length
+    ? DESTINATIONS.map(repo => h('li', {},
+      `${REPOSITORIES[repo].short} issues: `,
+      terms.map((t, i) => [i ? ' · ' : '', h('a', { href: issueSearchUrl(repo, t.term, { exact: t.exact }), target: '_blank', rel: 'noopener noreferrer' }, t.exact ? `“${t.term}”` : t.term)])))
+    : [h('li', {}, 'Add a title or keywords (step 1) to search existing issues.')]));
 }
 
 /** Update every "Open on GitHub" link and its warning (in the last step and in the preview). */
@@ -511,7 +521,7 @@ function undo() {
 }
 
 function rerenderAll() {
-  if (!state.queryEdited) state.query = state.draft.title;
+  if (!state.queryEdited) state.query = searchText(state.draft);
   renderForm();
   renderSearchStep();
   runSearch(state.query);

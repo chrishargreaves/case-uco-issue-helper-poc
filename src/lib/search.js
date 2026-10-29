@@ -4,7 +4,7 @@
 // DroneFlightLog. Entries are ranked by how many words they match, then by
 // how rare the matched words are across the index.
 
-const STOP_WORDS = new Set([
+export const STOP_WORDS = new Set([
   'a', 'an', 'and', 'the', 'of', 'for', 'to', 'in', 'on', 'or', 'with', 'is', 'by', 'from',
   // Words common in change-request titles that say nothing about the concept.
   'represent', 'representing', 'representation', 'new', 'add', 'adding', 'support', 'allow', 'need', 'concept',

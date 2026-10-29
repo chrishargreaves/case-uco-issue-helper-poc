@@ -12,6 +12,12 @@ export const GUIDANCE = {
     example: 'Represent drone flight logs',
   },
 
+  keywords: {
+    label: 'Keywords (optional)',
+    prompt: 'Other words for the concept, separated by commas. They are used to search existing concepts and GitHub issues.',
+    example: 'drone, UAV, flight log, flight path',
+  },
+
   background: {
     heading: 'Background',
     prompt: 'What you need, who needs it, and why, in your own words.',
@@ -79,8 +85,8 @@ export const GUIDANCE = {
 
   search: {
     heading: 'Check what already exists',
-    prompt: 'Search for the concept before asking for it, and mark anything related. The search starts from your title.',
-    useTitle: 'Use my title',
+    prompt: 'Search for the concept before asking for it, and mark anything related. The search starts from your title and keywords.',
+    useTitle: 'Use my title and keywords',
     coreHeading: 'Already in CASE/UCO',
     extensionHeading: 'In extensions (SOLVE-IT, CAC)',
     extensionNote: 'Not part of CASE/UCO, but shows how another project has modelled it.',

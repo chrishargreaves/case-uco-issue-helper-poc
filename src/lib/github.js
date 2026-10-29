@@ -35,11 +35,15 @@ export function issueHandOff(repo, { title, body }) {
   return { url: newIssueUrl(repo, { title }), tooLong: true };
 }
 
-/** Search a repository's issues, open and closed, for a term. */
-export function issueSearchUrl(repo, term) {
+/**
+ * Search a repository's issues, open and closed, for a term. With `exact`, a
+ * term of several words is searched as a phrase; without it, each word must
+ * appear somewhere in the issue.
+ */
+export function issueSearchUrl(repo, term, { exact = true } = {}) {
   assertKnownRepo(repo);
   const trimmed = term.trim();
-  const quoted = /\s/.test(trimmed) ? `"${trimmed}"` : trimmed;
+  const quoted = exact && /\s/.test(trimmed) ? `"${trimmed}"` : trimmed;
   const params = new URLSearchParams({ q: `is:issue ${quoted}` });
   return `https://github.com/${repo}/issues?${params}`;
 }

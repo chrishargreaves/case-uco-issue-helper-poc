@@ -47,3 +47,8 @@ test('an issue search term with spaces is quoted', () => {
   const url = new URL(issueSearchUrl('casework/CASE', 'drone flight log'));
   assert.equal(url.searchParams.get('q'), 'is:issue "drone flight log"');
 });
+
+test('a search that is not exact leaves the words unquoted', () => {
+  const url = new URL(issueSearchUrl('casework/CASE', 'drone flight logs', { exact: false }));
+  assert.equal(url.searchParams.get('q'), 'is:issue drone flight logs');
+});

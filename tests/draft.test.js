@@ -90,3 +90,12 @@ test('a related concept without a group is rejected', () => {
   assert.equal(result.ok, false);
   assert.match(result.error, /related/);
 });
+
+test('keywords are saved with the draft and must be text', () => {
+  const draft = { ...fullDraft(), keywords: 'UAV, flight path' };
+  assert.equal(parseDraft(serialiseDraft(draft)).draft.keywords, 'UAV, flight path');
+  assert.equal(createDraft().keywords, '');
+  const bad = parseDraft(JSON.stringify({ ...draft, keywords: ['UAV'] }));
+  assert.equal(bad.ok, false);
+  assert.match(bad.error, /keywords/);
+});
