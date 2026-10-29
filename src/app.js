@@ -345,6 +345,12 @@ function resultItem(entry) {
         h('span', { class: 'badge' }, entry.group),
         h('span', { class: 'badge' }, entry.type),
         label && h('span', { class: 'result-label' }, label)),
+      entry.matches?.length && h('span', { class: 'match-tags', 'aria-label': `Matched: ${entry.matches.map(m => m.term).join(', ')}` },
+        entry.matches.map(m => h('span', {
+          class: `match-tag${m.where === 'description' ? ' in-description' : ''}`,
+          title: m.where === 'description' ? `“${m.term}” was found in the description` : `“${m.term}” was found in the name`,
+          'aria-hidden': 'true',
+        }, m.term))),
       h('button', {
         type: 'button', class: 'button quiet small', 'aria-pressed': String(marked),
         'aria-label': `${marked ? g.unmark : g.mark}: ${entry.compactIri}`, onclick: () => toggleMarked(entry),

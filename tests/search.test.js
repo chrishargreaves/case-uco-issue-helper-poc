@@ -130,3 +130,24 @@ test('a phrase also matches its joined form written in a label or comment', () =
   const index = prepareIndex([entry('Route', { comment: 'Stores the flightpath as points.' }), entry('Other')]);
   assert.deepEqual(names(search(index, '"flight path"').core), ['Route']);
 });
+
+test('each result lists the terms it matched, and whether in the name or the description', () => {
+  const index = prepareIndex([entry('DroneThing', { comment: 'Records the flight path.' })]);
+  const [result] = search(index, 'drone "flight path" banana').core;
+  assert.deepEqual(result.matches, [
+    { term: 'drone', where: 'name' },
+    { term: 'flight path', where: 'description' },
+  ]);
+});
+
+test('search results are copies, so the index entries are not changed', () => {
+  const entries = [entry('Drone')];
+  search(prepareIndex(entries), 'drone');
+  assert.equal(entries[0].matches, undefined);
+});
+
+test('matched terms are shown as typed, not in their internal lower-case singular form', () => {
+  const index = prepareIndex([entry('EventLog', { comment: 'An unmanned UAV log.' })]);
+  const [result] = search(index, 'UAV Logs').core;
+  assert.deepEqual(result.matches.map(m => m.term), ['UAV', 'Logs']);
+});

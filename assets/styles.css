@@ -201,6 +201,14 @@ details.field-example p { margin: 4px 0 0; padding: 8px 10px; border-left: 3px s
 .result code { font: 600 0.88rem var(--mono); white-space: nowrap; }
 .badge { font-size: 0.75rem; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
 .result-label { color: var(--muted); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.match-tags { display: flex; gap: 4px; flex: none; }
+.match-tag {
+  font-size: 0.75rem; padding: 1px 6px; border-radius: 999px; white-space: nowrap;
+  background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-soft);
+}
+/* Found only in the description: an outline, so name matches stand out. */
+.match-tag.in-description { background: transparent; color: var(--muted); border-color: var(--border); }
+@media (max-width: 600px) { .match-tags { display: none; } }
 .result-details { padding: 0 12px 10px 34px; font-size: 0.88rem; }
 .result-comment { margin: 0 0 4px; color: var(--muted); }
 .result-meta { margin: 4px 0; }

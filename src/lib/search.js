@@ -36,16 +36,24 @@ function words(text) {
  */
 export function parseQuery(query) {
   const terms = new Map();
-  const add = (ws, phrase) => {
+  // `label` is the term as typed, for showing to the user.
+  const add = (ws, phrase, label) => {
     const joined = ws.join('');
     const existing = terms.get(joined);
     if (existing && (existing.phrase || !phrase)) return;
-    terms.set(joined, { words: ws, phrase, text: ws.join(' '), joined });
+    terms.set(joined, { words: ws, phrase, text: ws.join(' '), joined, label });
   };
   for (const [, quoted, plain] of (query || '').matchAll(/"([^"]*)"?|([^\s"]+)/g)) {
-    const ws = words(quoted ?? plain);
-    if (quoted !== undefined && ws.length > 1) add(ws, true);
-    else for (const w of ws) if (!STOP_WORDS.has(w)) add([w], false);
+    const typed = (quoted ?? plain).trim().replace(/\s+/g, ' ');
+    const ws = words(typed);
+    if (quoted !== undefined && ws.length > 1) {
+      add(ws, true, typed);
+    } else {
+      // A token that is one word keeps its typed form; one that splits into
+      // several (camelCase, hyphens) shows each word.
+      const single = ws.length === 1 ? typed.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '') : null;
+      for (const w of ws) if (!STOP_WORDS.has(w)) add([w], false, single ?? w);
+    }
   }
   return [...terms.values()];
 }
@@ -87,20 +95,23 @@ function termScore(prepared, term) {
 }
 
 function score(prepared, terms, weight) {
-  let matched = 0;
+  const matches = [];
   let total = 0;
   for (const term of terms) {
     const s = termScore(prepared, term);
-    if (s > 0) matched += 1;
+    // A score of 1 means the term was found only in the description.
+    if (s > 0) matches.push({ term: term.label, where: s === 1 ? 'description' : 'name' });
     // A phrase is as rare as its rarest word.
     total += s * Math.max(...term.words.map(weight));
   }
-  return { matched, total };
+  return { matches, matched: matches.length, total };
 }
 
 /**
  * Search the prepared index. Returns { core, extension }, each ranked and
  * capped at `limit`: CASE/UCO entries in `core`, SOLVE-IT and CAC in `extension`.
+ * Each result is a copy of its index entry with `matches`: the terms it
+ * matched, and whether each was found in the name or only the description.
  */
 export function search(prepared, query, { limit = 20 } = {}) {
   const q = parseQuery(query);
@@ -109,9 +120,9 @@ export function search(prepared, query, { limit = 20 } = {}) {
   const weight = prepared.weight || (() => 1);
   const hits = [];
   for (const p of prepared) {
-    const { matched, total } = score(p, q, weight);
+    const { matches, matched, total } = score(p, q, weight);
     if (matched === 0) continue;
-    hits.push({ p, matched, total, startsWith: p.nameJoined.startsWith(q[0].joined) ? 1 : 0 });
+    hits.push({ p, matches, matched, total, startsWith: p.nameJoined.startsWith(q[0].joined) ? 1 : 0 });
   }
 
   hits.sort((a, b) =>
@@ -123,9 +134,9 @@ export function search(prepared, query, { limit = 20 } = {}) {
 
   const core = [];
   const extension = [];
-  for (const { p } of hits) {
+  for (const { p, matches } of hits) {
     const list = p.entry.tier === 'core' ? core : extension;
-    if (list.length < limit) list.push(p.entry);
+    if (list.length < limit) list.push({ ...p.entry, matches });
     if (core.length >= limit && extension.length >= limit) break;
   }
   return { core, extension };
