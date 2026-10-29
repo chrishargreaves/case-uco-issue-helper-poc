@@ -254,9 +254,9 @@ function renderPreview() {
   $('preview').textContent = renderIssueBody(state.draft);
 }
 
-// ── Search panel ──
+// ── Search step ──
 
-function renderSearchPanel() {
+function renderSearchStep() {
   const g = G.search;
   const input = h('input', {
     type: 'search', id: 'search-input', placeholder: g.placeholder, value: state.query,
@@ -488,7 +488,7 @@ function undo() {
 function rerenderAll() {
   if (!state.queryEdited) state.query = state.draft.title;
   renderForm();
-  renderSearchPanel();
+  renderSearchStep();
   runSearch(state.query);
   changed();
 }
@@ -555,7 +555,7 @@ async function loadIndex() {
 // ── Start ──
 
 renderForm();
-renderSearchPanel();
+renderSearchStep();
 setupPreview();
 document.addEventListener('click', e => { if (e.target.closest('.copy-body')) copyBody(e); });
 $('form').addEventListener('input', onInput);
