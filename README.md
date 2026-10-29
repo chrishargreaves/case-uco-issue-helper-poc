@@ -1,6 +1,6 @@
 ⚠️ **Note this is an AI generated application.** See credits and disclaimer below.
 
-# CASE/UCO change request helper
+# CASE/UCO issue helper (proof of concept)
 
 This **prototype** is a single static web page for requesting a new concept in CASE or UCO. It asks for each part of the [UCO change request template](https://github.com/ucoProject/UCO/blob/master/.github/ISSUE_TEMPLATE/change-request.md) in plain language, with worked examples, and builds the issue text as it is filled in. A search over the existing ontologies shows whether the concept already exists, either in CASE/UCO or in an extension (SOLVE-IT, or the Crimes Against Children ontology from Project VIC). The finished request is filed by the submitter on GitHub's own new-issue page, so the page needs no sign-in and sends nothing itself.
 
