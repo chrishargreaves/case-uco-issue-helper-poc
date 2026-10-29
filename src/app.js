@@ -23,6 +23,10 @@ const state = {
   queryEdited: false,
   results: { core: [], extension: [] },
   expanded: { core: false, extension: false },
+  // Which result groups are open, and which result rows show their details.
+  // Extensions start folded: they are secondary, and their matches are looser.
+  groupOpen: { core: true, extension: false },
+  openResults: new Set(),
   // Until the submitter picks a destination, it follows the suggestion.
   destinationChosen: false,
   undo: null,
@@ -283,6 +287,7 @@ function searchFromTitle() {
 function runSearch(query) {
   state.query = query;
   state.expanded = { core: false, extension: false };
+  state.openResults = new Set();
   state.results = state.index ? search(state.index, query) : { core: [], extension: [] };
   renderResults();
   renderDestination();
@@ -312,23 +317,36 @@ function renderMarked() {
       h('button', { type: 'button', class: 'link-button', onclick: () => toggleMarked(r), 'aria-label': `Remove ${r.compactIri} from related concepts` }, 'remove'))))));
 }
 
+/** One compact result row; clicking the row shows its description and links. */
 function resultItem(entry) {
   const g = G.search;
   const marked = isMarked(entry);
+  const open = state.openResults.has(entry.iri);
   const repo = entry.tier === 'core' ? entry.repo : state.draft.destination;
   const label = entry.label && entry.label !== entry.localName && entry.label !== entry.compactIri ? entry.label : null;
+  const detailsId = `result-${slug(entry.iri)}`;
+  const toggle = () => {
+    if (open) state.openResults.delete(entry.iri);
+    else state.openResults.add(entry.iri);
+    renderResults();
+  };
   return h('li', { class: 'result', 'data-group': entry.group },
-    h('div', { class: 'result-title' },
-      h('code', {}, entry.compactIri),
-      h('span', { class: 'badge' }, entry.group),
-      h('span', { class: 'badge' }, entry.type)),
-    label && h('div', { class: 'result-label' }, label),
-    entry.comment && h('p', { class: 'result-comment' }, entry.comment),
-    entry.mapsTo?.length && h('p', { class: 'result-meta' }, 'Specialises ', entry.mapsTo.map((m, i) => [i ? ', ' : '', h('code', {}, m)])),
-    entry.caseClasses?.length && h('p', { class: 'result-meta' }, 'Works with ', entry.caseClasses.map((m, i) => [i ? ', ' : '', h('code', {}, m)])),
-    h('div', { class: 'result-actions' },
-      h('button', { type: 'button', class: 'button quiet small', 'aria-pressed': String(marked), onclick: () => toggleMarked(entry) }, marked ? `✓ ${g.unmark}` : g.mark),
-      h('a', { href: issueSearchUrl(repo, issueTerm(entry)), target: '_blank', rel: 'noopener noreferrer' }, `${g.searchIssues} (${repo.split('/')[1]})`)),
+    h('div', { class: 'result-row' },
+      h('button', { type: 'button', class: 'result-toggle', title: entry.compactIri, 'aria-expanded': String(open), 'aria-controls': detailsId, onclick: toggle },
+        h('span', { class: 'chevron', 'aria-hidden': 'true' }, open ? '▾' : '▸'),
+        h('code', {}, entry.compactIri),
+        h('span', { class: 'badge' }, entry.group),
+        h('span', { class: 'badge' }, entry.type),
+        label && h('span', { class: 'result-label' }, label)),
+      h('button', {
+        type: 'button', class: 'button quiet small', 'aria-pressed': String(marked),
+        'aria-label': `${marked ? g.unmark : g.mark}: ${entry.compactIri}`, onclick: () => toggleMarked(entry),
+      }, marked ? `✓ ${g.unmarkShort}` : g.markShort)),
+    open && h('div', { class: 'result-details', id: detailsId },
+      entry.comment && h('p', { class: 'result-comment' }, entry.comment),
+      entry.mapsTo?.length && h('p', { class: 'result-meta' }, 'Specialises ', entry.mapsTo.map((m, i) => [i ? ', ' : '', h('code', {}, m)])),
+      entry.caseClasses?.length && h('p', { class: 'result-meta' }, 'Works with ', entry.caseClasses.map((m, i) => [i ? ', ' : '', h('code', {}, m)])),
+      h('a', { href: issueSearchUrl(repo, issueTerm(entry)), target: '_blank', rel: 'noopener noreferrer' }, `${g.searchIssues} (${REPOSITORIES[repo].short})`)),
     marked && entry.tier === 'core' && h('p', { class: 'nearly-fits' }, g.nearlyFits));
 }
 
@@ -357,19 +375,26 @@ function renderResults() {
     resultsGroup('extension', g.extensionHeading, g.extensionNote, extension, 'No matches in the extensions.'));
 }
 
-const SHOWN_AT_FIRST = 5;
+const SHOWN_AT_FIRST = 8;
 
 function resultsGroup(tier, heading, note, entries, empty) {
+  const open = state.groupOpen[tier];
   const shown = state.expanded[tier] ? entries : entries.slice(0, SHOWN_AT_FIRST);
   const hidden = entries.length - shown.length;
+  const listId = `results-${tier}`;
   return h('div', { class: 'results-group' },
-    h('h3', {}, `${heading} (${entries.length})`),
-    note && h('p', { class: 'note' }, note),
-    entries.length ? h('ul', { class: 'results' }, shown.map(resultItem)) : h('p', { class: 'note' }, empty),
-    hidden > 0 && h('button', {
-      type: 'button', class: 'button quiet small',
-      onclick: () => { state.expanded[tier] = true; renderResults(); },
-    }, `Show all ${entries.length}`));
+    h('h3', {},
+      h('button', {
+        type: 'button', class: 'group-toggle', 'aria-expanded': String(open), 'aria-controls': listId,
+        onclick: () => { state.groupOpen[tier] = !open; renderResults(); },
+      }, h('span', { class: 'chevron', 'aria-hidden': 'true' }, open ? '▾' : '▸'), `${heading} (${entries.length})`)),
+    open && h('div', { id: listId },
+      note && h('p', { class: 'note' }, note),
+      entries.length ? h('ul', { class: 'results' }, shown.map(resultItem)) : h('p', { class: 'note' }, empty),
+      hidden > 0 && h('button', {
+        type: 'button', class: 'button quiet small',
+        onclick: () => { state.expanded[tier] = true; renderResults(); },
+      }, `Show all ${entries.length}`)));
 }
 
 // ── Destination and output ──

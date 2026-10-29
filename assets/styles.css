@@ -184,23 +184,28 @@ details.field-example p { margin: 4px 0 0; padding: 8px 10px; border-left: 3px s
   border: 1px solid var(--border);
   border-left: 4px solid var(--group, var(--border));
   border-radius: 6px;
-  padding: 10px 12px;
-  margin: 8px 0;
+  margin: 4px 0;
 }
 .result[data-group="UCO"] { --group: var(--uco); }
 .result[data-group="CASE"] { --group: var(--case); }
 .result[data-group="SOLVE-IT"] { --group: var(--solveit); }
 .result[data-group="CAC"] { --group: var(--cac); }
-.result-title { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
-.result code { font: 600 0.9rem var(--mono); word-break: break-all; }
-.badge { font-size: 0.75rem; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--muted); }
-.result-label { color: var(--muted); font-size: 0.88rem; }
-.result-comment {
-  margin: 4px 0; font-size: 0.88rem; color: var(--muted);
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+.result-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 0; }
+.result-toggle, .group-toggle {
+  display: flex; align-items: baseline; gap: 6px; min-width: 0;
+  border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
 }
-.result-meta { margin: 4px 0; font-size: 0.85rem; }
-.result-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; font-size: 0.88rem; }
+.result-toggle { flex: 1; padding: 6px 8px; overflow: hidden; }
+.group-toggle { padding: 0; font-weight: 700; }
+.chevron { color: var(--muted); width: 1em; flex: none; }
+.result code { font: 600 0.88rem var(--mono); white-space: nowrap; }
+.badge { font-size: 0.75rem; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.result-label { color: var(--muted); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.result-details { padding: 0 12px 10px 34px; font-size: 0.88rem; }
+.result-comment { margin: 0 0 4px; color: var(--muted); }
+.result-meta { margin: 4px 0; }
+.result-details code { font-weight: 600; white-space: normal; word-break: break-all; }
+.result .nearly-fits { margin: 0 12px 10px 34px; }
 .nearly-fits { margin: 8px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-text); font-size: 0.85rem; }
 
 .marked { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: var(--accent-soft); }

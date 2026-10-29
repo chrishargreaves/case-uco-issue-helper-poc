@@ -87,6 +87,8 @@ export const GUIDANCE = {
     nearlyFits: 'If this nearly fits, a request to correct or extend it may suit better. This tool does not yet guide that kind of request.',
     mark: 'Mark as related',
     unmark: 'Marked as related',
+    markShort: 'Mark',
+    unmarkShort: 'Marked',
     searchIssues: 'Search existing issues',
     empty: 'No matches. Try a shorter or different word.',
   },
